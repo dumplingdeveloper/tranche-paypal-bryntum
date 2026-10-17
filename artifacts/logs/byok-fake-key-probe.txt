@@ -1,0 +1,6 @@
+### provider=openai fake key, GitHub token env unset, useLoggedInUser=false, isolated COPILOT_HOME (2026-10-17T19:38:56Z)
+SPIKE_FAILED Authentication failed with provider at https://api.openai.com/v1 (HTTP 401).
+  Check your COPILOT_PROVIDER_API_KEY, COPILOT_PROVIDER_API_KEY_COMMAND, or COPILOT_PROVIDER_BEARER_TOKEN.
+### provider=anthropic fake key, GitHub token env unset, useLoggedInUser=false, isolated COPILOT_HOME (2026-10-17T19:38:59Z)
+SPIKE_FAILED Authentication failed with provider at https://api.anthropic.com (HTTP 401).
+  Check your COPILOT_PROVIDER_API_KEY, COPILOT_PROVIDER_API_KEY_COMMAND, or COPILOT_PROVIDER_BEARER_TOKEN.

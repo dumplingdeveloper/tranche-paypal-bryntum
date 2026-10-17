@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-17T19:44:30.537Z",
+  "durationMs": 140799,
+  "auth": "byok:openai",
+  "model": "qwen3:4b-instruct",
+  "prompt": "Invoice INV-2 for Acme is 9 days overdue",
+  "liveUserTurns": 1,
+  "modelRequests": 2,
+  "toolCalls": [
+    {
+      "args": {
+        "invoice_number": "INV-2",
+        "reason": "overdue 9 days"
+      },
+      "moved": [
+        "acme-t2 2026-10-25->2026-11-10 (+16d)",
+        "acme-build 2026-10-25->2026-11-10 (+16d)",
+        "acme-t3 2026-11-22->2026-12-01 (+9d)",
+        "acme-launch 2026-11-22->2026-12-01 (+9d)"
+      ],
+      "slip": 9
+    }
+  ],
+  "finalText": "Phases move: Tranche 2 and Build & integrations shift by 16 days; Launch & handover shifts by 9 days. Client launch slips by 9 days. Projects unaffected: Birch & Pine Studio — Brand refresh. No changes applied until confirmed.",
+  "events": [
+    {
+      "type": "assistant.turn_start"
+    },
+    {
+      "type": "assistant.usage",
+      "model": "qwen3:4b-instruct",
+      "inputTokens": 1786,
+      "outputTokens": 34
+    },
+    {
+      "type": "assistant.message",
+      "content": "",
+      "toolRequests": 1
+    },
+    {
+      "type": "tool.execution_start",
+      "toolName": "schedule_shift_preview",
+      "arguments": {
+        "invoice_number": "INV-2",
+        "reason": "overdue 9 days"
+      },
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "type": "assistant.turn_start"
+    },
+    {
+      "type": "assistant.usage",
+      "model": "qwen3:4b-instruct",
+      "inputTokens": 2361,
+      "outputTokens": 56
+    },
+    {
+      "type": "assistant.message",
+      "content": "Phases move: Tranche 2 and Build & integrations shift by 16 days; Launch & handover shifts by 9 days. Client launch slips by 9 days. Projects unaffected: Birch & Pine Studio — Brand refresh. No changes applied until confirmed.",
+      "toolRequests": 0
+    }
+  ]
+}
