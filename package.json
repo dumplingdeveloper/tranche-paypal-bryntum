@@ -1,0 +1,28 @@
+{
+  "name": "tranche",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tranche: agent-driven delivery board where PayPal invoice tranches drive a Bryntum Gantt.",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@bryntum/calendar": "npm:@bryntum/calendar-trial@7.3.7",
+    "@bryntum/gantt": "npm:@bryntum/gantt-trial@7.3.7",
+    "@bryntum/scheduler": "npm:@bryntum/scheduler-trial@7.3.7",
+    "@github/copilot-sdk": "1.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "node src/server/dev.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "screenshot": "node scripts/screenshot.ts",
+    "spike:agent": "node src/agent/spikeAgent.ts"
+  }
+}

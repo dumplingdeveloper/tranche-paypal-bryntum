@@ -1,0 +1,22 @@
+html, body { margin: 0; height: 100%; font-family: Poppins, system-ui, sans-serif; }
+body { display: flex; flex-direction: column; background: #f6f7fb; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; background: #0b1f3a; color: #fff; }
+.brand { font-weight: 700; font-size: 18px; }
+.brand span { font-weight: 400; font-size: 13px; opacity: .75; margin-left: 8px; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.15); margin-left: 6px; }
+.pill.mock { background: #ffb800; color: #222; font-weight: 600; }
+.invoices { display: flex; gap: 8px; padding: 10px 18px; flex-wrap: wrap; }
+.inv { background: #fff; border-radius: 10px; padding: 6px 10px; font-size: 12px; border-left: 5px solid #999; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.inv b { font-size: 13px; }
+.inv.paid { border-color: #1a9c5b; } .inv.overdue { border-color: #d6293e; } .inv.awaiting { border-color: #f0a400; } .inv.draft { border-color: #9aa3b2; } .inv.refunded { border-color: #7b3fe4; }
+.banner { margin: 0 18px 8px; padding: 8px 12px; border-radius: 8px; background: #fff4d6; border: 1px solid #f0c24b; font-size: 13px; }
+.banner.ok { background: #e9f8ef; border-color: #7fd1a2; }
+#gantt { flex: 1; min-height: 0; }
+/* Tranche milestones coloured by PayPal invoice state */
+.b-gantt-task.tranche-paid { --b-gantt-task-background: #1a9c5b; background: #1a9c5b; }
+.b-gantt-task.tranche-overdue { --b-gantt-task-background: #d6293e; background: #d6293e; }
+.b-gantt-task.tranche-awaiting { --b-gantt-task-background: #f0a400; background: #f0a400; }
+.b-gantt-task.tranche-draft { --b-gantt-task-background: #9aa3b2; background: #9aa3b2; }
+.b-gantt-task.phase-blocked { background: repeating-linear-gradient(135deg, #d6293e 0 8px, #f18a96 8px 16px) !important; }
+.state-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; color: #fff; }
+.state-chip.paid { background: #1a9c5b; } .state-chip.overdue { background: #d6293e; } .state-chip.awaiting { background: #f0a400; } .state-chip.draft { background: #9aa3b2; } .state-chip.refunded { background: #7b3fe4; }

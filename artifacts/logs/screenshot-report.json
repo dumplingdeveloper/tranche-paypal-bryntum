@@ -1,0 +1,114 @@
+{
+  "gantt-plan": {
+    "url": "http://127.0.0.1:4317/",
+    "file": "artifacts/screenshots/gantt-plan.png",
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "externalRequests": [],
+    "consoleErrors": [],
+    "watermarkCandidates": [
+      {
+        "tag": "DIV",
+        "cls": "b-widget b-container b-panel b-grid-base b-timeline-base b-gantt-base b-gantt b-bryntum b-vbox b-grid-no-text-selection ",
+        "text": "Name\nPayPal tranche\nStart\nFinish\nSun 20 Sep 2026\nSun 27 Sep 2026\nSun 04 Oct 2026\nSun 11 Oct 2026\nSun 18 Oct 2026\nSun 25 "
+      }
+    ]
+  },
+  "gantt-preview-INV-2": {
+    "url": "http://127.0.0.1:4317/?preview=INV-2&assumed=2026-11-10",
+    "file": "artifacts/screenshots/gantt-preview-INV-2.png",
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "preview",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      },
+      "previewCheck": {
+        "checked": 12,
+        "mismatches": []
+      },
+      "preview": {
+        "preview_id": "pv_INV-2_2026-11-10",
+        "today": "2026-11-03",
+        "invoice": {
+          "invoice_number": "INV-2",
+          "client": "Acme Coffee Roasters",
+          "status": "SENT",
+          "amount": "4800.00 EUR",
+          "due_date": "2026-10-25",
+          "days_overdue": 9
+        },
+        "assumed_payment_date": "2026-11-10",
+        "assumption_source": "model",
+        "moved": [
+          {
+            "task_id": "acme-t2",
+            "project": "Acme Coffee Roasters — Online shop rebuild",
+            "name": "Tranche 2 (40%) · INV-2",
+            "kind": "tranche",
+            "old_start": "2026-10-25",
+            "old_end": "2026-10-25",
+            "new_start": "2026-11-10",
+            "new_end": "2026-11-10",
+            "delta_days": 16
+          },
+          {
+            "task_id": "acme-build",
+            "project": "Acme Coffee Roasters — Online shop rebuild",
+            "name": "Build & integrations",
+            "kind": "phase",
+            "old_start": "2026-10-25",
+            "old_end": "2026-11-15",
+            "new_start": "2026-11-10",
+            "new_end": "2026-12-01",
+            "delta_days": 16
+          },
+          {
+            "task_id": "acme-t3",
+            "project": "Acme Coffee Roasters — Online shop rebuild",
+            "name": "Tranche 3 (30%) · INV-3",
+            "kind": "tranche",
+            "old_start": "2026-11-22",
+            "old_end": "2026-11-22",
+            "new_start": "2026-12-01",
+            "new_end": "2026-12-01",
+            "delta_days": 9
+          },
+          {
+            "task_id": "acme-launch",
+            "project": "Acme Coffee Roasters — Online shop rebuild",
+            "name": "Launch & handover",
+            "kind": "phase",
+            "old_start": "2026-11-22",
+            "old_end": "2026-11-27",
+            "new_start": "2026-12-01",
+            "new_end": "2026-12-06",
+            "delta_days": 9
+          }
+        ],
+        "unaffected_projects": [
+          "Birch & Pine Studio — Brand refresh"
+        ],
+        "client_deadline_slip_days": 9
+      }
+    },
+    "externalRequests": [],
+    "consoleErrors": [],
+    "watermarkCandidates": [
+      {
+        "tag": "DIV",
+        "cls": "b-widget b-container b-panel b-grid-base b-timeline-base b-gantt-base b-gantt b-bryntum b-vbox b-grid-no-text-selection ",
+        "text": "Name\nPayPal tranche\nStart\nFinish\nSun 20 Sep 2026\nSun 27 Sep 2026\nSun 04 Oct 2026\nSun 11 Oct 2026\nSun 18 Oct 2026\nSun 25 "
+      }
+    ]
+  }
+}
