@@ -1,0 +1,77 @@
+{
+  "2026-10-17": {
+    "ready": true,
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "taskBars": 14,
+    "popups": [],
+    "trialText": []
+  },
+  "2026-11-09": {
+    "ready": true,
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "taskBars": 14,
+    "popups": [],
+    "trialText": []
+  },
+  "2026-11-30": {
+    "ready": true,
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "taskBars": 14,
+    "popups": [],
+    "trialText": []
+  },
+  "2026-12-31": {
+    "ready": true,
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "taskBars": 14,
+    "popups": [],
+    "trialText": []
+  },
+  "2027-03-01": {
+    "ready": true,
+    "state": {
+      "ready": true,
+      "today": "2026-11-03",
+      "mode": "plan",
+      "planCheck": {
+        "checked": 12,
+        "mismatches": []
+      }
+    },
+    "taskBars": 14,
+    "popups": [],
+    "trialText": []
+  }
+}

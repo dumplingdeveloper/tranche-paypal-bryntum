@@ -21,3 +21,13 @@ npm run spike:agent  # Copilot SDK agent calls schedule_shift_preview (needs Cop
 
 Bryntum Gantt/Scheduler/Calendar are commercial software installed from the public npm trial packages; they are
 **not** redistributed in this repository and are not covered by this repository's MIT licence.
+
+### BYOK (no Copilot subscription, no GitHub login)
+
+```bash
+TRANCHE_LLM_PROVIDER=openai TRANCHE_LLM_API_KEY=... TRANCHE_LLM_MODEL=gpt-4o-mini npm run spike:agent
+# local, keyless: TRANCHE_LLM_PROVIDER=openai TRANCHE_LLM_BASE_URL=http://127.0.0.1:11434/v1 TRANCHE_LLM_MODEL=qwen3:4b-instruct TRANCHE_TIMEOUT_MS=300000 npm run spike:agent
+```
+
+Evidence: [docs/FACTS_BRYNTUM.md](docs/FACTS_BRYNTUM.md), [docs/FACTS_COPILOT_BYOK.md](docs/FACTS_COPILOT_BYOK.md),
+[docs/FACTS_PAYPAL_INVOICING.md](docs/FACTS_PAYPAL_INVOICING.md).
