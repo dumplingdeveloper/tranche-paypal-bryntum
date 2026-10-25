@@ -266,6 +266,14 @@ export class SandboxInvoicingClient implements InvoicingClient {
     return out;
   }
 
+  /** GET /v2/invoicing/invoices (INV:230 "List invoices"; page/page_size/total_required INV:315-321). One page, TRANCHE- only. */
+  async listInvoices(page = 1, pageSize = 100): Promise<{ invoices: PayPalInvoice[]; total_pages?: number }> {
+    const res = await this.api('GET', `/v2/invoicing/invoices?page=${page}&page_size=${pageSize}&total_required=true`);
+    const data = await this.json(res) as { items?: any[]; total_pages?: number } | undefined;
+    const invoices = (data?.items || []).filter((raw) => String(raw?.detail?.invoice_number || '').startsWith(this.prefix)).map((raw) => toDomainInvoice(raw, this.prefix));
+    return { invoices, total_pages: data?.total_pages };
+  }
+
   /** GET /v2/invoicing/invoices/{invoice_id} (INV:1440). Also accepts a domain number such as INV-2. */
   async getInvoice(invoiceId: string): Promise<PayPalInvoice> {
     if (!/^INV2-/.test(invoiceId)) {
@@ -300,7 +308,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
     return inv;
   }
 
-  /** DELETE /v2/invoicing/invoices/{invoice_id} (INV:1440 path, delete op): drafts only. Used by sandbox:smoke cleanup. */
+  /** DELETE /v2/invoicing/invoices/{invoice_id} (INV:1694-1696): "Deletes invoices in the draft or scheduled state only". Used by sandbox:smoke cleanup. */
   async deleteDraft(invoiceId: string) {
     await this.api('DELETE', `/v2/invoicing/invoices/${encodeURIComponent(invoiceId)}`, undefined, { retryable: false });
     this.record('delete_draft', invoiceId);
@@ -345,7 +353,15 @@ export class SandboxInvoicingClient implements InvoicingClient {
 
 /** Builds the sandbox client only when credentials exist; otherwise returns the reason and makes no request. */
 export function sandboxClientFromEnv(opts: Omit<SandboxClientOptions, 'credentials'> & { env?: NodeJS.ProcessEnv; file?: string } = {}) {
-  const lookup = loadSandboxCredentials(opts.env, opts.file);
+  const env = opts.env || process.env;
+  const lookup = loadSandboxCredentials(env, opts.file);
   if (!lookup.creds) return { client: undefined, lookup };
-  return { client: new SandboxInvoicingClient({ ...opts, credentials: lookup.creds }), lookup };
+  return { client: new SandboxInvoicingClient({ ...opts, prefix: opts.prefix ?? invoicePrefixFromEnv(env), credentials: lookup.creds }), lookup };
+}
+
+/** TRANCHE_INVOICE_PREFIX (default TRANCHE-) lets a judge seed a fresh demo set; invoice_number is max 25 chars (INV:3795). */
+export function invoicePrefixFromEnv(env: NodeJS.ProcessEnv = process.env) {
+  const p = (env.TRANCHE_INVOICE_PREFIX || INVOICE_PREFIX).toUpperCase();
+  if (!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(p)) throw new Error(`TRANCHE_INVOICE_PREFIX must be 1-12 of A-Z, 0-9, '-' (got ${JSON.stringify(p)})`);
+  return p;
 }

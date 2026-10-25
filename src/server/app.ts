@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { DEMO_TODAY } from '../domain/mockData.ts';
 import type { ShiftPreview } from '../domain/types.ts';
 import { MockInvoicingClient } from '../paypal/mockInvoicing.ts';
-import { InvoicingError } from '../paypal/invoicing.ts';
+import { InvoicingError, type InvoicingClient } from '../paypal/invoicing.ts';
 import { PaymentWatcher, type PaymentEvent } from '../paypal/watcher.ts';
 import type { AgentRunner, AgentTurn } from '../agent/runner.ts';
 import type { ToolHost } from '../agent/tools.ts';
@@ -17,6 +17,8 @@ export type TrancheOptions = {
   auditFile?: string;
   pollMs?: number;
   autoWatch?: boolean;
+  /** Defaults to the deterministic mock. `TRANCHE_PAYPAL=sandbox` passes a SandboxInvoicingClient. */
+  invoicing?: InvoicingClient;
 };
 
 type EngineDates = Record<string, { start: string; end: string }>;
@@ -42,7 +44,7 @@ const send = (res: ServerResponse, status: number, body: unknown) => {
 export async function createTranche(opts: TrancheOptions) {
   const today = opts.today || DEMO_TODAY;
   const audit = new AuditLog(opts.auditFile);
-  const invoicing = new MockInvoicingClient({ today: () => today });
+  const invoicing: InvoicingClient = opts.invoicing || new MockInvoicingClient({ today: () => today });
   const board = new Board(today);
   const broker = new ConfirmationBroker(audit);
   const clients = new Set<ServerResponse>();
@@ -156,6 +158,7 @@ export async function createTranche(opts: TrancheOptions) {
       agent_busy: agentBusy,
       last_preview: lastPreview,
       mock_calls: invoicing.calls,
+      paypal_calls: invoicing.calls,
     };
   }
 
@@ -231,12 +234,19 @@ export async function createTranche(opts: TrancheOptions) {
         const inv = board.invoice(num);
         if (!inv) throw new HttpError(404, 'INVOICE_NOT_FOUND', `No invoice ${num}`);
         let result: unknown;
-        if (action === 'payer_pays') result = await invoicing.simulatePayerPayment(inv.id, today);
-        else if (action === 'record_external_payment') result = await invoicing.recordPayment(inv.id, { payment_date: today, method: 'BANK_TRANSFER', note: 'Recorded in Tranche demo (mock)' });
-        else if (action === 'refund') result = await invoicing.recordRefund(inv.id, { refund_date: today, method: 'BANK_TRANSFER' });
+        const sandbox = invoicing.mode === 'sandbox';
+        // The real sandbox may refuse a payment/refund date in the future, so the demo clock is clamped to the real date there.
+        const realToday = new Date().toISOString().slice(0, 10);
+        const actionDate = sandbox && realToday < today ? realToday : today;
+        if (action === 'payer_pays') {
+          // A real PayPal payment needs a sandbox buyer in a browser; only the mock can simulate it.
+          if (!(invoicing instanceof MockInvoicingClient)) throw new HttpError(409, 'NEEDS_BROWSER_PAYER', 'In SANDBOX mode a PayPal payment comes from a sandbox buyer paying the invoice link in a browser. Use "Record bank transfer" to record a payment via the API instead.');
+          result = await invoicing.simulatePayerPayment(inv.id, today);
+        } else if (action === 'record_external_payment') result = await invoicing.recordPayment(inv.id, { payment_date: actionDate, method: 'BANK_TRANSFER', note: `Recorded in Tranche demo (${invoicing.mode})` });
+        else if (action === 'refund') result = await invoicing.recordRefund(inv.id, { refund_date: actionDate, method: 'BANK_TRANSFER' });
         else if (action === 'cancel') result = await invoicing.cancelInvoice(inv.id, { send_to_recipient: false });
         else throw new HttpError(400, 'BAD_ACTION', 'action must be payer_pays | record_external_payment | refund | cancel');
-        audit.append('demo-control', 'mock.simulate', { action, invoice_number: num, result, note: 'MOCK PayPal: demo control, not a real PayPal call' });
+        audit.append('demo-control', sandbox ? 'sandbox.demo_control' : 'mock.simulate', { action, invoice_number: num, result, note: sandbox ? 'PayPal SANDBOX API call made from a demo control' : 'MOCK PayPal: demo control, not a real PayPal call' });
         const events = await watcher.poll();
         return send(res, 200, { result: result ?? null, events });
       }

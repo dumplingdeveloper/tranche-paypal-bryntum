@@ -252,7 +252,16 @@ function renderTop(s: State) {
   badge.textContent = a.live ? `Agent: LIVE · ${a.label}` : `Agent: SCRIPTED (no LLM)`;
   badge.className = `pill ${a.live ? 'live' : 'scripted'}`;
   badge.title = a.reason || a.label;
-  $('paypal-mode').textContent = `PayPal: ${s.modes.paypal.toUpperCase()}`;
+  const sandbox = s.modes.paypal === 'sandbox';
+  const pp = $('paypal-mode');
+  pp.textContent = `PayPal: ${s.modes.paypal.toUpperCase()}`;
+  pp.className = `pill ${sandbox ? 'sandbox' : 'mock'}`;
+  pp.title = sandbox ? 'Real PayPal sandbox (api-m.sandbox.paypal.com), REST Invoicing v2, polled. Sandbox money is not real.' : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
+  $('poll-note').textContent = sandbox ? 'polled from the PayPal sandbox Invoicing API' : 'polled from Invoicing API (mock)';
+  const demoSummary = document.querySelector('details.demo > summary');
+  if (demoSummary) demoSummary.textContent = sandbox ? 'Demo controls — real PayPal SANDBOX API calls' : 'Demo controls — simulate PayPal activity (MOCK only)';
+  const payerBtn = document.querySelector<HTMLButtonElement>('button[data-sim="payer_pays"]');
+  if (payerBtn) { payerBtn.disabled = sandbox; payerBtn.title = sandbox ? 'In the sandbox a PayPal payment comes from a sandbox buyer opening the invoice link in a browser.' : ''; }
   $('clock').textContent = `Demo today: ${pretty(s.today)} 2026`;
   const inv = $('invoices'); inv.replaceChildren();
   for (const i of s.invoices) {
