@@ -66,7 +66,7 @@ Browser (web/)                                 Node server (src/server, one proc
 - The payment watcher, which turns polling into normalised `INVOICING.INVOICE.*`-shaped events.
 - The agent tools and the HTTP/SSE server.
 
-**Reused from entry 1** (patterns, or adapted code; the user is the author; provenance is logged in BUILD_LOG):
+**Reused from entry 1** (planned; as built in M1–M3 only the *patterns* were reused and no code was copied, see BUILD_LOG "Provenance"):
 - the OAuth token cache + `paypalFetch` with `PayPal-Request-Id` + the sandbox-host guard (`hackathon_paypal/mcp-server/src/paypal/liveClient.ts`);
 - `PayPalApiError` (`…/paypal/types.ts`);
 - the `ConfirmationBroker` pattern (`hackathon_paypal/alexa-sim/src/permissionGate.ts:18`);
@@ -76,7 +76,7 @@ Browser (web/)                                 Node server (src/server, one proc
 
 ## 5. Safety model
 1. **The LLM never computes dates.** `schedule_shift_preview` returns dates computed by `src/domain/schedule.ts`, and the browser checks them against the Bryntum engine.
-2. **Agent tools are read-only.** The tools that change something (`request_apply`, `request_remind`) only create a pending confirmation, bound to the `preview_id` and a hash of the exact dates or payload. Clicking Apply executes **that** preview. If the data changed in between, the preview is stale and gets rejected.
+2. **Agent tools are read-only.** The tools that change something (`request_schedule_change`, `request_payment_reminder`) only create a pending confirmation, bound to the `preview_id` and a sha256 hash of the exact payload. Clicking Apply executes **that** preview. If the board changed in between (PayPal event, another apply, an undo), the card is swept to `stale` immediately and `approve()` re-checks the hash again, so a stale preview is never executed.
 3. **Money-adjacent PayPal calls** (remind, cancel, record payment) always need a human click.
    - Live mode is limited to the sandbox (host guard on `api-m.sandbox.paypal.com`, as in entry 1).
    - Every write carries a `PayPal-Request-Id` for idempotency.
@@ -95,7 +95,7 @@ git clone … && cd tranche && npm install && npm start      # opens http://127.
   - (b) BYOK: `TRANCHE_LLM_PROVIDER=openai|anthropic|azure TRANCHE_LLM_API_KEY=… TRANCHE_LLM_MODEL=…`. No GitHub login or subscription is needed (proven: FACTS_COPILOT_BYOK Q4).
   - (c) Local Ollama works, but is slow (140 s per turn on CPU with a 4B model).
   - (d) With no LLM at all, a **scripted agent** replays the same tool calls deterministically, so the UI flow is always demonstrable. It is clearly labelled "scripted".
-- **Optional: PayPal sandbox.** Put `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env`; `npm run seed:sandbox` then creates and sends the 5 tranche invoices and the board runs live.
+- **Optional: PayPal sandbox (M4, not built yet).** Planned: put `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env`; `npm run seed:sandbox` then creates and sends the 5 tranche invoices and the board runs live. Today `TRANCHE_PAYPAL_MODE` other than `mock` exits with "not implemented yet (M4)".
 - **Bryntum:** `npm install` pulls the public trial packages from npm (no account needed; proven in FACTS_BRYNTUM §4). We never redistribute Bryntum code.
 
 ## 7. Differentiation vs entry 1 ("substantially different")
@@ -116,7 +116,7 @@ git clone … && cd tranche && npm install && npm start      # opens http://127.
 |---|---|---|
 | Bryntum trial terms say "internal evaluation"; the trial is 45 vs 60 days; there is a watermark | FACTS_BRYNTUM §2 | The sponsor invites trial builds. The user asks Bryntum in Discord (2 min). We never commit Bryntum code. The watermark is acceptable and is what all trial entrants have. |
 | The trial expires during judging (npm 7.3.7 published 2026-09-24; +45 d = 2026-11-08) | FACTS_BRYNTUM §3 (clock probe: no expiry seen up to 2027-03-01) | Judges install fresh (new per-install UUID). Record the video early. Re-probe before submission. |
-| Time zone/DST shifts dates (Irish DST ends 2026-10-25) | Gotcha seen in spike A | Use UTC dates in the domain and set the Gantt project `timeZone` (to verify), or format all dates explicitly. |
+| Time zone/DST shifts dates (Irish DST ends 2026-10-25) | Gotcha seen in spike A | **Resolved in M1:** every Bryntum date is anchored at local noon (`toBryntumDate`); the e2e time-zone matrix (Dublin, Los Angeles, Kolkata, Auckland) asserts engine dates = server dates before and after an apply. |
 | No PayPal sandbox credentials yet | `~/.config/tillwise/paypal-sandbox.env` absent | Mock-first. The live client is optional. The user creates a sandbox app (about 10 min) only if wanted. |
 | A custom reminder text is not honoured by PayPal | INV:6298, :6305 | Be honest in the UI: "PayPal sends its standard reminder; copy your note". |
 | Webhooks need a public URL | WH:1699–1702; judges run locally | Polling `search-invoices` by default; the webhook receiver is optional. |
@@ -143,3 +143,9 @@ git clone … && cd tranche && npm install && npm start      # opens http://127.
 - (5) submit on Devpost and tick "Best Use of Bryntum" (15 min).
 
 Target: feature-complete by 2026-11-05, submitted by 2026-11-10 (deadline is 12 Nov 2026 20:00 GMT).
+
+
+### 9a. Actuals for M1–M3 (measured 2026-10-25)
+- Wall clock: go-ahead message 2026-10-25T18:07:29Z → M1 commit 18:30:34Z → M2 commit 18:52:41Z → M3 commit 19:03:38Z → docs commit (see `git log`). About 1.1 h of wall-clock time, against the 7–10 h agent-time estimate above.
+- Live LLM turns: **4** (2 runs × 2 turns, `gpt-6-luna`; run 1 lost to a clamshell sleep), against "≤ 20" for M3. Details in BUILD_LOG.
+- Tokens: **not measured.** The session log has no per-call token counts for this run, so the 5–7 M estimate cannot be compared.
