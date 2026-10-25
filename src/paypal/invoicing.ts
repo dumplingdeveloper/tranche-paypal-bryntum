@@ -1,6 +1,6 @@
 // PayPal Invoicing v2 surface Tranche needs. Endpoint references are to
 // paypal-rest-api-specifications/openapi/invoicing_v2.json (see docs/FACTS_PAYPAL_INVOICING.md).
-// Only MockInvoicingClient implements this today; a sandbox client is milestone M4 (not written yet).
+// Implemented by MockInvoicingClient (default) and SandboxInvoicingClient (sandboxClient.ts, TRANCHE_PAYPAL=sandbox).
 import type { InvoiceStatus, Money, PayPalInvoice } from '../domain/types.ts';
 
 // `notification` body of send/remind/cancel (INV:6291). PayPal ignores a user subject/note (INV:6298, :6305),
@@ -14,8 +14,14 @@ export type RefundDetail = { refund_date: string; method: PaymentMethod; amount?
 
 export type InvoiceSearch = { status?: InvoiceStatus[] };
 
+export type InvoicingCall = { op: string; invoice_id: string; at: string; detail?: unknown };
+
 export interface InvoicingClient {
   readonly mode: 'mock' | 'sandbox';
+  /** Calls made by this process (no secrets), shown in the UI and audit. */
+  readonly calls: InvoicingCall[];
+  /** Reminders this process sent for the invoice on the given day (PayPal allows 2 per day, INV:480). */
+  remindersOn(invoiceId: string, day?: string): number;
   /** POST /v2/invoicing/search-invoices (INV:1767); status filter INV:6802. */
   searchInvoices(query?: InvoiceSearch): Promise<PayPalInvoice[]>;
   /** GET /v2/invoicing/invoices/{invoice_id} (INV:1440). */

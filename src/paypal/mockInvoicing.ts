@@ -3,14 +3,14 @@
 // Everything here is labelled MOCK in the UI and in the audit log.
 import { MOCK_INVOICES } from '../domain/mockData.ts';
 import type { InvoiceStatus, Money, PayPalInvoice } from '../domain/types.ts';
-import { InvoicingError, type InvoiceNotification, type InvoiceSearch, type InvoicingClient, type PaymentDetail, type RefundDetail } from './invoicing.ts';
+import { InvoicingError, type InvoicingCall, type InvoiceNotification, type InvoiceSearch, type InvoicingClient, type PaymentDetail, type RefundDetail } from './invoicing.ts';
 
 const REMINDABLE = new Set<InvoiceStatus>(['UNPAID', 'SENT', 'PARTIALLY_PAID']); // INV:5309-5318
 const REMINDERS_PER_DAY = 2; // INV:480
 const cents = (m: Money) => Math.round(Number(m.value) * 100);
 const money = (c: number, currency: string): Money => ({ currency_code: currency, value: (c / 100).toFixed(2) });
 
-export type MockCall = { op: string; invoice_id: string; at: string; detail?: unknown };
+export type MockCall = InvoicingCall;
 
 export class MockInvoicingClient implements InvoicingClient {
   readonly mode = 'mock' as const;
