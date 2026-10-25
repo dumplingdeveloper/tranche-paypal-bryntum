@@ -90,6 +90,7 @@ Commits: `c7072ac` (M1), `e429822` (M2), `5732400` (M3 live + SDK), then the doc
 - `git clone` of this repo into `/tmp/tranche-clone` → `npm install` → `npm start` printed `Tranche running at http://127.0.0.1:4317/`, `PayPal: MOCK …`, `Agent:  Copilot · gpt-6-luna (copilot-login:yuxinshiu63)`.
 - `GET /api/state` returned 5 invoices and 12 scheduled tasks. Headless Chrome on the clone: `{"report":{"checked":12,"matched":12,"mismatches":[]},"agent":"Agent: LIVE · Copilot · gpt-6-luna","tasks":14}`, no console errors.
 - In the clone: `npm test` → 34/34 pass; `npx tsc` clean. Server stopped by PID; clone removed afterwards.
+- Re-run on commit 9b2b855 (2026-10-25, after the docs/BYOK commit): `npm install` → "added 65 packages"; `npm start` printed the same three lines; `/api/state` returned INV-1 PAID, INV-2 SENT, INV-3 DRAFT, INV-4 PAID, INV-5 SENT and 12 tasks; headless Chrome gave the same 12/12 report with `errors []`; `npm test` → 35/35 pass. Server (PID 23163) killed; clone removed.
 
 ## Provenance and licensing
 - This repo is MIT (`LICENSE`), © 2026 yuxinshiu63.
