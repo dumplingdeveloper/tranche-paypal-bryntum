@@ -1,0 +1,42 @@
+{
+  "written_by": "test",
+  "at": "2026-10-25T18:51:24.481Z",
+  "refund_card": "cf_0001",
+  "reminder_card": "cf_0003",
+  "engine": {
+    "birch-t1": {
+      "start": "2026-11-10",
+      "end": "2026-11-10"
+    },
+    "birch-identity": {
+      "start": "2026-11-10",
+      "end": "2026-11-24"
+    },
+    "birch-t2": {
+      "start": "2026-11-24",
+      "end": "2026-11-24"
+    },
+    "birch-rollout": {
+      "start": "2026-11-24",
+      "end": "2026-12-01"
+    }
+  },
+  "reminder_audit": {
+    "seq": 23,
+    "at": "2026-10-25T18:51:23.931Z",
+    "actor": "paypal",
+    "action": "paypal.invoice.remind",
+    "details": {
+      "invoice_id": "INV2-ACME-0002",
+      "invoice_number": "INV-2",
+      "mode": "mock",
+      "endpoint": "POST /v2/invoicing/invoices/{invoice_id}/remind",
+      "notification": {
+        "send_to_recipient": true,
+        "send_to_invoicer": false
+      },
+      "reminders_today": 1
+    }
+  },
+  "screenshot": "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/e2e/08-reminder-sent.png"
+}

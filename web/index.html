@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <link rel="icon" href="data:,">
-  <title>Tranche — payment-aware delivery board (spike)</title>
+  <title>Tranche — payment-aware delivery board</title>
   <link rel="stylesheet" href="/node_modules/@bryntum/gantt/fontawesome/css/fontawesome.css">
   <link rel="stylesheet" href="/node_modules/@bryntum/gantt/fontawesome/css/solid.css">
   <link rel="stylesheet" href="/node_modules/@bryntum/gantt/gantt.css">
@@ -13,12 +13,52 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">Tranche <span>payment-aware delivery board · spike</span></div>
-    <div class="meta"><span class="pill mock">PayPal: MOCK invoices</span><span class="pill" id="clock"></span></div>
+    <div class="brand">Tranche <span>delivery board where PayPal invoice tranches drive the schedule</span></div>
+    <div class="meta">
+      <span class="pill mock" id="paypal-mode" title="Deterministic mock of PayPal Invoicing v2. No real money moves.">PayPal: MOCK</span>
+      <span class="pill" id="agent-mode">Agent: …</span>
+      <span class="pill" id="clock"></span>
+    </div>
   </header>
-  <section id="invoices" class="invoices"></section>
+  <section id="invoices" class="invoices" aria-label="PayPal invoice tranches"></section>
   <section id="banner" class="banner" hidden></section>
-  <main id="gantt"></main>
+  <div class="layout">
+    <div class="boards">
+      <div id="gantt" class="gantt-host"></div>
+      <div class="cap-title">Team capacity <span>(Bryntum SchedulerPro sharing the Gantt's project — bookings move with the plan; hover a booking for its full name and dates)</span></div>
+      <div id="capacity" class="capacity-host"></div>
+    </div>
+    <aside class="panel">
+      <section class="card agent">
+        <h2>Agent <small id="agent-status"></small></h2>
+        <div id="transcript" class="transcript" aria-live="polite"></div>
+        <div class="quick" id="quick"></div>
+        <form id="ask-form" class="ask"><input id="ask-input" autocomplete="off" placeholder="Ask about a payment, e.g. “INV-2 is 9 days overdue”"><button type="submit">Send</button></form>
+      </section>
+      <section class="card">
+        <h2>Approvals <small>nothing changes until you click Apply</small></h2>
+        <div id="confirmations"></div>
+        <div class="undo-row"><button id="undo" disabled>Undo last applied change</button><span id="undo-note"></span></div>
+      </section>
+      <section class="card">
+        <h2>PayPal events <small id="poll-note">polled from Invoicing API (mock)</small></h2>
+        <div id="events" class="events"></div>
+        <details class="demo"><summary>Demo controls — simulate PayPal activity (MOCK only)</summary>
+          <div class="demo-row"><select id="sim-invoice"></select>
+            <button data-sim="payer_pays">Client pays via PayPal</button>
+            <button data-sim="record_external_payment">Record bank transfer</button>
+            <button data-sim="refund">Refund</button>
+            <button data-sim="cancel">Cancel invoice</button>
+          </div>
+        </details>
+      </section>
+      <section class="card">
+        <h2>Audit log <small id="engine-note"></small></h2>
+        <div id="audit" class="audit"></div>
+      </section>
+    </aside>
+  </div>
+  <div id="toast" class="toast" hidden></div>
   <script type="module" src="/web/main.ts"></script>
 </body>
 </html>

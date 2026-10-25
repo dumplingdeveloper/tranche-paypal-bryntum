@@ -72,7 +72,7 @@ export async function createTranche(opts: TrancheOptions) {
   const host: ToolHost = {
     board, broker, audit,
     reminders: (id) => invoicing.remindersOn(id),
-    previewShown: (p) => { lastPreview = p; broadcast('preview', p); },
+    previewShown: (p) => { lastPreview = p; broadcast('preview', p); stateChanged(); },
     applySchedule: (p, confirmationId) => {
       const change = board.apply(p, confirmationId);
       const expected = scheduleToObject(board.schedule());
@@ -91,7 +91,11 @@ export async function createTranche(opts: TrancheOptions) {
     },
   };
 
-  broker.onChange(() => stateChanged());
+  broker.onChange((c) => {
+    // Ghost bars follow the server's latest preview; drop them once its card is resolved.
+    if (c.kind === 'apply_schedule' && c.status !== 'pending' && lastPreview?.preview_id === c.preview_id) lastPreview = null;
+    stateChanged();
+  });
   const agent = opts.agent(host);
   audit.append('system', 'agent.mode', { ...agent.info });
 
@@ -124,6 +128,7 @@ export async function createTranche(opts: TrancheOptions) {
     today: () => today,
     onEvents: (events: PaymentEvent[], invoices) => {
       board.setInvoices(invoices);
+      if (events.some((e) => !e.initial)) broker.sweepStale(`PayPal: ${events.filter((e) => !e.initial).map((e) => `${e.invoice_number} ${e.event_type}`).join(', ')}`);
       for (const e of events) {
         audit.append(e.source === 'tranche-clock' ? 'system' : 'paypal', 'paypal.event', { ...e });
         addMessage({ role: 'event', text: `${e.event_type} · ${e.summary}` });
@@ -192,6 +197,7 @@ export async function createTranche(opts: TrancheOptions) {
       if (req.method === 'POST' && m) {
         const body = await readJson(req);
         const c = m[2] === 'approve' ? await broker.approve(m[1], String(body.payload_hash || '')) : broker.reject(m[1], String(body.reason || 'rejected by owner'));
+        if (m[2] === 'approve') broker.sweepStale(`${c.id} applied`);
         stateChanged();
         return send(res, 200, c);
       }
@@ -200,8 +206,11 @@ export async function createTranche(opts: TrancheOptions) {
         let change;
         try { change = board.undo(String(body.confirmation_id || '')); } catch (err) { throw new HttpError(409, 'CANNOT_UNDO', (err as Error).message); }
         audit.append('owner', 'schedule.undone', { confirmation_id: change.confirmation_id, preview_id: change.preview_id, invoice_number: change.invoice_number, plan_date_restored: change.from, via: 'bryntum-stm' });
+        const expected = scheduleToObject(board.schedule());
+        broadcast('schedule.undone', { confirmation_id: change.confirmation_id, invoice_number: change.invoice_number, plan_date: change.from, expected });
+        broker.sweepStale(`${change.confirmation_id} undone`);
         stateChanged();
-        return send(res, 200, { undone: change, expected: scheduleToObject(board.schedule()) });
+        return send(res, 200, { undone: change, expected });
       }
       if (req.method === 'POST' && path === '/api/schedule/engine-report') {
         const body = await readJson(req);

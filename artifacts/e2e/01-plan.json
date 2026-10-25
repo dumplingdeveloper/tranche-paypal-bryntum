@@ -1,0 +1,71 @@
+{
+  "written_by": "test",
+  "at": "2026-10-25T18:51:09.962Z",
+  "engine": {
+    "acme-discovery": {
+      "start": "2026-09-28",
+      "end": "2026-10-05"
+    },
+    "acme-t1": {
+      "start": "2026-10-05",
+      "end": "2026-10-05"
+    },
+    "acme-design": {
+      "start": "2026-10-05",
+      "end": "2026-10-19"
+    },
+    "acme-t2": {
+      "start": "2026-10-25",
+      "end": "2026-10-25"
+    },
+    "acme-build": {
+      "start": "2026-10-25",
+      "end": "2026-11-15"
+    },
+    "acme-t3": {
+      "start": "2026-11-22",
+      "end": "2026-11-22"
+    },
+    "acme-launch": {
+      "start": "2026-11-22",
+      "end": "2026-11-27"
+    },
+    "birch-audit": {
+      "start": "2026-10-12",
+      "end": "2026-10-22"
+    },
+    "birch-t1": {
+      "start": "2026-10-22",
+      "end": "2026-10-22"
+    },
+    "birch-identity": {
+      "start": "2026-10-22",
+      "end": "2026-11-05"
+    },
+    "birch-t2": {
+      "start": "2026-11-16",
+      "end": "2026-11-16"
+    },
+    "birch-rollout": {
+      "start": "2026-11-16",
+      "end": "2026-11-23"
+    }
+  },
+  "readability": {
+    "problems": [],
+    "counts": {
+      "header-row-0": 4,
+      "header-row-1": 13,
+      "column-headers": 4,
+      "task-names": 14,
+      "date-cells": 28,
+      "tranche-chips": 6,
+      "capacity-labels": 8
+    }
+  },
+  "watermark": [
+    "#gantt: Trial Version watermark present",
+    "#capacity: Trial Version watermark present"
+  ],
+  "screenshot": "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/e2e/01-plan.png"
+}

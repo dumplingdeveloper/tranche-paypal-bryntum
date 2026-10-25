@@ -1,0 +1,25 @@
+{
+  "written_by": "test",
+  "at": "2026-10-25T18:51:19.399Z",
+  "stale_card": "cf_0001",
+  "release_card": "cf_0003",
+  "engine": {
+    "acme-t2": {
+      "start": "2026-11-03",
+      "end": "2026-11-03"
+    },
+    "acme-build": {
+      "start": "2026-11-03",
+      "end": "2026-11-24"
+    },
+    "acme-t3": {
+      "start": "2026-11-24",
+      "end": "2026-11-24"
+    },
+    "acme-launch": {
+      "start": "2026-11-24",
+      "end": "2026-11-29"
+    }
+  },
+  "screenshot": "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/e2e/06-release-after-payment.png"
+}

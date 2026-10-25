@@ -1,22 +1,79 @@
-html, body { margin: 0; height: 100%; font-family: Poppins, system-ui, sans-serif; }
-body { display: flex; flex-direction: column; background: #f6f7fb; }
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; background: #0b1f3a; color: #fff; }
+html, body { margin: 0; height: 100%; font-family: Poppins, system-ui, -apple-system, sans-serif; }
+body { font-size: 14px; display: flex; flex-direction: column; background: #f4f6fb; color: #1b2433; overflow: hidden; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 18px; background: #0b1f3a; color: #fff; flex: none; }
 .brand { font-weight: 700; font-size: 18px; }
-.brand span { font-weight: 400; font-size: 13px; opacity: .75; margin-left: 8px; }
+.brand span { font-weight: 400; font-size: 13px; opacity: .78; margin-left: 8px; }
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: rgba(255,255,255,.15); margin-left: 6px; }
 .pill.mock { background: #ffb800; color: #222; font-weight: 600; }
-.invoices { display: flex; gap: 8px; padding: 10px 18px; flex-wrap: wrap; }
-.inv { background: #fff; border-radius: 10px; padding: 6px 10px; font-size: 12px; border-left: 5px solid #999; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.inv b { font-size: 13px; }
-.inv.paid { border-color: #1a9c5b; } .inv.overdue { border-color: #d6293e; } .inv.awaiting { border-color: #f0a400; } .inv.draft { border-color: #9aa3b2; } .inv.refunded { border-color: #7b3fe4; }
-.banner { margin: 0 18px 8px; padding: 8px 12px; border-radius: 8px; background: #fff4d6; border: 1px solid #f0c24b; font-size: 13px; }
-.banner.ok { background: #e9f8ef; border-color: #7fd1a2; }
-#gantt { flex: 1; min-height: 0; }
-/* Tranche milestones coloured by PayPal invoice state */
+.pill.live { background: #19a463; font-weight: 600; }
+.pill.scripted { background: #e0e4ec; color: #222; font-weight: 600; }
+.invoices { display: flex; gap: 8px; padding: 8px 18px; flex-wrap: wrap; flex: none; }
+.inv { background: #fff; border-radius: 10px; padding: 5px 10px; font-size: 12px; border-left: 5px solid #999; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.inv .l1 { font-size: 12.5px; } .inv .l2 { font-size: 11px; color: #5b6475; } .inv .late { color: #d6293e; }
+.inv.paid { border-color: #1a9c5b; } .inv.overdue { border-color: #d6293e; } .inv.awaiting { border-color: #f0a400; } .inv.draft { border-color: #9aa3b2; }
+.inv.refunded { border-color: #7b3fe4; } .inv.cancelled { border-color: #4b5563; }
+.banner { margin: 0 18px 6px; padding: 6px 12px; border-radius: 8px; background: #eef3ff; border: 1px dashed #5b7cfa; font-size: 13px; flex: none; }
+.layout { flex: 1; min-height: 0; display: flex; gap: 10px; padding: 0 10px 10px 18px; }
+.boards { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.gantt-host { flex: 1 1 auto; min-height: 0; font-size: 13px; }
+.capacity-host { flex: 0 0 196px; min-height: 0; border-top: 1px solid #dfe3eb; font-size: 13px; }
+.capacity-host .b-sch-event-content { font-size: 10.5px; margin: 0 2px; }
+.capacity-host .b-sch-event { padding: 0; }
+.cap-title { flex: none; font-size: 12px; font-weight: 600; padding: 4px 10px; background: #f7f8fb; border-top: 1px solid #dfe3eb; }
+.cap-title span { font-weight: 400; color: #5b6475; }
+.panel { width: 430px; flex: none; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.card { background: #fff; border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); font-size: 13px; }
+.card h2 { font-size: 14px; margin: 0 0 6px; }
+.card h2 small { font-weight: 400; color: #5b6475; font-size: 11px; margin-left: 6px; }
+.transcript { max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+.msg { padding: 5px 8px; border-radius: 8px; line-height: 1.35; white-space: pre-wrap; }
+.msg.owner { background: #e6efff; align-self: flex-end; max-width: 88%; }
+.msg.agent { background: #f2f4f8; }
+.msg.agent.scripted { border-left: 3px solid #9aa3b2; }
+.msg.agent.live { border-left: 3px solid #19a463; }
+.msg.event { background: #fff8e6; font-size: 12px; color: #6b4e00; }
+.msg .who { font-size: 11px; font-weight: 600; color: #5b6475; display: block; }
+.tools { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tool { font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; background: #fff; border: 1px solid #d5dae3; border-radius: 6px; padding: 1px 5px; }
+.tool.err { border-color: #d6293e; color: #a1182a; }
+.activity { font-size: 12px; color: #5b6475; font-style: italic; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.quick button, .demo button, .undo-row button { font: inherit; font-size: 12px; border: 1px solid #c7cfdd; background: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.ask { display: flex; gap: 6px; }
+.ask input { flex: 1; font: inherit; padding: 6px 8px; border: 1px solid #c7cfdd; border-radius: 8px; }
+.ask button { font: inherit; border: 0; background: #0b1f3a; color: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.conf { border: 1px solid #d5dae3; border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+.conf.pending { border-color: #5b7cfa; background: #f6f8ff; }
+.conf .head { display: flex; justify-content: space-between; font-size: 11px; color: #5b6475; }
+.conf .status { font-weight: 600; text-transform: uppercase; }
+.conf.approved .status { color: #1a9c5b; } .conf.stale .status, .conf.failed .status { color: #d6293e; } .conf.rejected .status, .conf.superseded .status { color: #6b7280; }
+.conf .note { margin-top: 4px; padding: 4px 6px; background: #fff; border: 1px dashed #c7cfdd; border-radius: 6px; font-size: 12px; }
+.conf .actions { display: flex; gap: 6px; margin-top: 6px; }
+.conf .actions button { font: inherit; font-size: 12px; border-radius: 6px; padding: 3px 12px; cursor: pointer; border: 1px solid #c7cfdd; background: #fff; }
+.conf .actions button.apply { background: #0070e0; border-color: #0070e0; color: #fff; font-weight: 600; }
+.conf .hash { font-family: ui-monospace, Menlo, monospace; }
+.undo-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #5b6475; }
+.undo-row button:disabled { opacity: .5; cursor: default; }
+.events { max-height: 120px; overflow-y: auto; font-size: 12px; }
+.ev { padding: 2px 0; border-bottom: 1px solid #f0f2f6; }
+.ev code { font-size: 10.5px; background: #f2f4f8; padding: 0 4px; border-radius: 4px; }
+.demo { margin-top: 6px; font-size: 12px; }
+.demo-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.audit { max-height: 150px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; }
+.audit div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #1b2433; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 1000; }
+/* Gantt: tranche milestones coloured by PayPal invoice state */
 .b-gantt-task.tranche-paid { --b-gantt-task-background: #1a9c5b; background: #1a9c5b; }
 .b-gantt-task.tranche-overdue { --b-gantt-task-background: #d6293e; background: #d6293e; }
 .b-gantt-task.tranche-awaiting { --b-gantt-task-background: #f0a400; background: #f0a400; }
 .b-gantt-task.tranche-draft { --b-gantt-task-background: #9aa3b2; background: #9aa3b2; }
+.b-gantt-task.tranche-refunded { --b-gantt-task-background: #7b3fe4; background: #7b3fe4; }
+.b-gantt-task.tranche-cancelled { --b-gantt-task-background: #4b5563; background: #4b5563; }
 .b-gantt-task.phase-blocked { background: repeating-linear-gradient(135deg, #d6293e 0 8px, #f18a96 8px 16px) !important; }
-.state-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; color: #fff; }
-.state-chip.paid { background: #1a9c5b; } .state-chip.overdue { background: #d6293e; } .state-chip.awaiting { background: #f0a400; } .state-chip.draft { background: #9aa3b2; } .state-chip.refunded { background: #7b3fe4; }
+.b-task-baseline.ghost-preview { background: rgba(91,124,250,.25) !important; border: 2px dashed #3d5bd9 !important; border-radius: 4px; min-height: 8px; }
+.b-task-baseline.ghost-hidden { display: none !important; }
+.state-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; color: #fff; white-space: nowrap; }
+.state-chip.paid { background: #1a9c5b; } .state-chip.overdue { background: #d6293e; } .state-chip.awaiting { background: #f0a400; } .state-chip.draft { background: #9aa3b2; }
+.state-chip.refunded { background: #7b3fe4; } .state-chip.cancelled { background: #4b5563; }
+/* Scheduler: double-booked people */
+.b-sch-event.booking-conflict { outline: 2px solid #d6293e; outline-offset: 1px; }

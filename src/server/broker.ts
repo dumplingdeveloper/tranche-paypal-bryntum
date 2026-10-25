@@ -110,6 +110,24 @@ export class ConfirmationBroker {
     }
   }
 
+  // Proactive sweep after the board changes (PayPal event, apply, undo): pending cards whose fresh payload no longer
+  // matches are marked stale at once, so the owner never sees an Apply button for an outdated preview.
+  // approve() still re-checks, so a change racing the click is also caught.
+  sweepStale(cause: string): Confirmation[] {
+    const marked: Confirmation[] = [];
+    for (const c of this.items.filter((x) => x.status === 'pending')) {
+      const hooks = this.hooks.get(c.id);
+      if (!hooks) continue;
+      let fresh: string;
+      try { fresh = hashPayload(hooks.recheck()); } catch (err) { fresh = `error:${(err as Error).message}`; }
+      if (fresh === c.payload_hash) continue;
+      this.resolve(c, 'stale', `board changed since the preview (${cause}; ${fresh.startsWith('error:') ? fresh.slice(6) : 'different result now'})`);
+      this.audit.append('system', 'confirmation.marked_stale', { id: c.id, kind: c.kind, invoice_number: c.invoice_number, preview_id: c.preview_id, cause, reason: c.resolution });
+      marked.push(structuredClone(c));
+    }
+    return marked;
+  }
+
   reject(id: string, reason = 'rejected by owner', actor: 'owner' = 'owner') {
     const c = this.get(id);
     if (!c) throw new BrokerError(404, 'NOT_FOUND', `No confirmation ${id}`);

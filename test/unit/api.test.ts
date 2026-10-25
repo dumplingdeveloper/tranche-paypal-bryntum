@@ -69,12 +69,14 @@ test('mock simulate: payer pays INV-2 → PAID event → (auto-watch off) no age
   const remind = s.confirmations.find((c: any) => c.kind === 'send_reminder');
   const r = await (await post('/api/mock/simulate', { action: 'payer_pays', invoice_number: 'INV-2' })).json();
   assert.deepEqual(r.events.map((e: any) => [e.event_type, e.status_after]), [['INVOICING.INVOICE.PAID', 'PAID']]);
-  // The shift preview assumed INV-2 was unpaid; after the payment it is no longer valid.
+  // The shift preview assumed INV-2 was unpaid; the PAID event sweeps both cards to stale before anyone clicks.
+  s = await state();
+  assert.deepEqual(s.audit.filter((e: any) => e.action === 'confirmation.marked_stale').map((e: any) => [e.actor, e.details.id]), [['system', card.id], ['system', remind.id]]);
   const stale = await post(`/api/confirmations/${card.id}/approve`, { payload_hash: card.payload_hash });
   assert.equal(stale.status, 409);
-  assert.equal((await stale.json()).error.code, 'STALE');
+  assert.equal((await stale.json()).error.code, 'ALREADY_RESOLVED');
   const staleRem = await post(`/api/confirmations/${remind.id}/approve`, { payload_hash: remind.payload_hash });
-  assert.equal((await staleRem.json()).error.code, 'STALE');
+  assert.equal((await staleRem.json()).error.code, 'ALREADY_RESOLVED');
   s = await state();
   assert.equal(s.plan_dates['INV-2'], '2026-10-25');
   assert.equal(s.mock_calls.filter((c: any) => c.op === 'remind').length, 0);
