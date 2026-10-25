@@ -68,7 +68,10 @@ export async function startPayPalStub(o: StubOptions) {
       const d = json?.detail || {};
       if (!d.currency_code) return err(res, 400, 'MISSING_REQUIRED_PARAMETER', 'detail.currency_code is required');
       if ([...invoices.values()].some((x) => x.detail.invoice_number === d.invoice_number)) return err(res, 422, 'STUB_DUPLICATE_INVOICE_NUMBER', 'Invoice number already exists');
-      if (o.rejectPastDueDate && d.payment_term?.due_date && d.payment_term.due_date < (o.today || '0000')) return err(res, 422, 'STUB_INVALID_DUE_DATE', 'Due date cannot be in the past (stub knob)');
+      if (o.rejectPastDueDate && d.payment_term?.due_date && d.payment_term.due_date < (o.today || '0000')) {
+        // Shape of a validation error per https://developer.paypal.com/api/rest/responses/ (details[].field/value/location/issue).
+        return send(res, 422, { name: 'UNPROCESSABLE_ENTITY', message: 'The requested action could not be performed.', debug_id: 'stubdebugdue', details: [{ field: '/detail/payment_term/due_date', value: d.payment_term.due_date, location: 'body', issue: 'STUB_INVALID_VALUE', description: 'Value is invalid (stub knob).' }] });
+      }
       const id = `INV2-STUB-0000-0000-${String(++seq).padStart(4, '0')}`;
       const total = (json.items || []).reduce((s: number, it: any) => s + Number(it.quantity || 1) * Number(it.unit_amount?.value || 0), 0);
       const created = { id, status: 'DRAFT', detail: { ...d, metadata: { create_time: `${d.invoice_date}T09:00:00Z` } }, primary_recipients: json.primary_recipients, items: json.items, amount: money(d.currency_code, total), links: [{ href: `http://stub/v2/invoicing/invoices/${id}`, rel: 'self', method: 'GET' }] };

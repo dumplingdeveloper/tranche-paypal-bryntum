@@ -316,6 +316,7 @@ test('seed: if PayPal refuses a past due_date, falls back to DUE_ON_RECEIPT + re
   const rows = await seedSandbox(client, { demoToday: '2026-11-03', realToday: '2026-11-03' });
   const inv2 = rows.find((r) => r.invoice_number === 'INV-2')!;
   assert.equal(inv2.actions[0], 'created(due-date fallback)');
+  assert.match(inv2.note || '', /422 STUB_INVALID_VALUE \[\/detail\/payment_term\/due_date\]/);
   assert.equal(inv2.due_date, '2026-10-25');
   assert.equal(inv2.days_overdue_on_demo_clock, 9);
   const raw = [...stub.invoices.values()].find((x) => x.detail.invoice_number === 'TRANCHE-INV-2');

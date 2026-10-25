@@ -206,7 +206,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
     }
   }
 
-  // PayPal error body (INV:3506 error_default → name, message, debug_id INV:3206, details[].issue/description).
+  // PayPal error body (INV:3506 error_default → name, message, debug_id INV:3206, details[].field/issue/description).
   private async toError(method: string, path: string, res: Response) {
     const text = await res.text().catch(() => '');
     let body: any = {};
@@ -214,7 +214,8 @@ export class SandboxInvoicingClient implements InvoicingClient {
     const debugId = res.headers.get('paypal-debug-id') || body.debug_id || 'n/a';
     const detail = body.details?.[0];
     const issue = String(detail?.issue || body.name || body.error || `HTTP_${res.status}`);
-    const message = this.mask(`PayPal ${method} ${path} → ${res.status} ${issue}: ${detail?.description || body.message || body.error_description || text.slice(0, 200)} (PayPal-Debug-Id ${debugId})`);
+    const field = detail?.field ? ` [${detail.field}]` : '';
+    const message = this.mask(`PayPal ${method} ${path} → ${res.status} ${issue}${field}: ${detail?.description || body.message || body.error_description || text.slice(0, 200)} (PayPal-Debug-Id ${debugId})`);
     this.log(message);
     const err = new InvoicingError(res.status, issue, message);
     err.debugId = debugId;
