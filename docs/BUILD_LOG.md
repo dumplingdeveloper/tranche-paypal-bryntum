@@ -150,3 +150,9 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
 - **Results:** `npm test` 57/57, `npm run test:e2e` 9/9, `npx tsc` clean. The re-rendered screenshots of the 8
   earlier e2e tests only differed by timestamps and were restored with `git checkout -- artifacts`.
 - **Unverified until a real sandbox run:** see docs/FACTS_PAYPAL_INVOICING.md §8.
+- **Clean clone (2026-10-25, commit `f5fbcbb`):** `git clone` into `/tmp/tranche-m4clone` → `npm install` ("added 65
+  packages") → `npx tsc` clean → `npm test` 57/57. `npm run sandbox:seed`, `npm run sandbox:smoke` and
+  `TRANCHE_PAYPAL=sandbox npm start` each printed `NO CREDENTIALS: …` and exited 2. `npm start` (mock) printed
+  `PayPal: MOCK …` and `Agent:  Copilot · gpt-6-luna (copilot-login:yuxinshiu63)` (no model turn was sent);
+  `/api/state` returned INV-1 PAID, INV-2 SENT, INV-3 DRAFT, INV-4 PAID, INV-5 SENT and 12 tasks. Server (PID
+  33308) killed; clone removed.
