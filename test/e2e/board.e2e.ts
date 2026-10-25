@@ -3,7 +3,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ScriptedAgent } from '../../src/agent/scripted.ts';
-import { apiState, engineDates, launch, openBoard, readability, shot, startApp, stmInfo, trialWatermark, waitFor, waitReport, writeEvidence, type Browser } from './harness.ts';
+import { apiState, engineDates, ganttGeometry, launch, openBoard, readability, shot, startApp, stmInfo, trialWatermark, waitFor, waitReport, writeEvidence, type Browser } from './harness.ts';
 
 let browser: Browser;
 before(async () => { browser = await launch(); });
@@ -38,8 +38,11 @@ test('plan loads: engine dates = server scheduler; headers, task names and dates
     assert.deepEqual(wm, ['#gantt: Trial Version watermark present', '#capacity: Trial Version watermark present']);
     assert.deepEqual(s.audit.filter((e: any) => e.action === 'engine.verified').map((e: any) => [e.details.reason, e.details.matched, e.details.checked]), [['load', 12, 12]]);
     assert.deepEqual(errors, []);
+    const geo = await ganttGeometry(page);
+    assert.deepEqual(geo.ghosts, []);
+    for (const id of ACME) assert.equal(geo.bars[id].height, 18, `${id} bar height`); // rowHeight 32 - 2 x barMargin 7
     const path = await shot(page, '01-plan');
-    writeEvidence('01-plan', { engine, readability: read, watermark: wm, screenshot: path });
+    writeEvidence('01-plan', { engine, readability: read, watermark: wm, bar_heights: Object.fromEntries(ACME.map((id) => [id, geo.bars[id].height])), screenshot: path });
     await context.close();
   } finally { await app.close(); }
 });
@@ -55,6 +58,21 @@ test('agent preview → owner applies in the UI → Bryntum engine moves the cha
     await page.waitForFunction(() => !(window as any).__tranche.gantt.features.baselines.disabled);
     const ghost = await page.evaluate(() => [...document.querySelectorAll('#gantt .b-task-baseline.ghost-preview')].length);
     assert.equal(ghost, 4);
+    // Preview must not squeeze the real bars (Bryntum's default baseline layout shrinks them to ~7px) and milestone
+    // ghosts must be full-size dashed diamonds with their own label that overlaps no other visible label.
+    await page.waitForTimeout(400);
+    const geo = await ganttGeometry(page);
+    for (const id of ACME) assert.equal(geo.bars[id].height, 18, `${id} bar height during preview`);
+    assert.deepEqual(geo.ghosts.map((g) => g.task_id), ['acme-t2', 'acme-build', 'acme-t3', 'acme-launch']);
+    const ghostMilestones = geo.ghosts.filter((g) => g.milestone);
+    assert.deepEqual(ghostMilestones.map((g) => g.label).sort(), ['INV-2 → 10 Nov', 'INV-3 → 1 Dec']);
+    for (const g of ghostMilestones) {
+      assert.deepEqual(g.diamond, { width: '16px', height: '16px', border: 'dashed' });
+      assert.deepEqual(g.label_overlaps, [], `${g.label} overlaps`);
+    }
+    for (const g of geo.ghosts.filter((x) => !x.milestone)) assert.ok(g.box.height >= 18 && g.box.width > 18, JSON.stringify(g));
+    const visibleLabels = await page.evaluate(() => [...document.querySelectorAll('#gantt .b-sch-label')].filter((l) => getComputedStyle(l).visibility !== 'hidden' && l.getBoundingClientRect().width > 0).map((l) => (l as HTMLElement).innerText).sort());
+    assert.deepEqual(visibleLabels, ['INV-1 €3,600', 'INV-4 €3,000', 'INV-5 €3,000']);
     assert.deepEqual(pick(await engineDates(page), ACME), BASE_PLAN, 'preview must not move the plan');
     assert.deepEqual(await stmInfo(page), { position: 0, queue: [], canUndo: false });
     const previewShot = await shot(page, '02-preview-INV-2');
@@ -94,7 +112,7 @@ test('agent preview → owner applies in the UI → Bryntum engine moves the cha
     assert.ok(s.audit.some((e: any) => e.action === 'engine.verified' && e.details.reason === 'undo'));
     assert.deepEqual(errors, []);
     const undoShot = await shot(page, '04-undone');
-    writeEvidence('02-apply-undo', { confirmation: card.id, engine_after_apply: pick(applied, ACME), engine_after_undo: pick(undone, ACME), outlined, screenshots: [previewShot, appliedShot, undoShot] });
+    writeEvidence('02-apply-undo', { confirmation: card.id, preview_geometry: geo, engine_after_apply: pick(applied, ACME), engine_after_undo: pick(undone, ACME), outlined, screenshots: [previewShot, appliedShot, undoShot] });
     await context.close();
   } finally { await app.close(); }
 });

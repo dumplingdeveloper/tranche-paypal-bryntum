@@ -62,16 +62,28 @@ body { font-size: 14px; display: flex; flex-direction: column; background: #f4f6
 .audit { max-height: 150px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; }
 .audit div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #1b2433; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 1000; }
-/* Gantt: tranche milestones coloured by PayPal invoice state */
-.b-gantt-task.tranche-paid { --b-gantt-task-background: #1a9c5b; background: #1a9c5b; }
-.b-gantt-task.tranche-overdue { --b-gantt-task-background: #d6293e; background: #d6293e; }
-.b-gantt-task.tranche-awaiting { --b-gantt-task-background: #f0a400; background: #f0a400; }
-.b-gantt-task.tranche-draft { --b-gantt-task-background: #9aa3b2; background: #9aa3b2; }
-.b-gantt-task.tranche-refunded { --b-gantt-task-background: #7b3fe4; background: #7b3fe4; }
-.b-gantt-task.tranche-cancelled { --b-gantt-task-background: #4b5563; background: #4b5563; }
+/* Gantt: tranche milestones coloured by PayPal invoice state (the diamond is .b-gantt-task-content::before). */
+.b-gantt-task.tranche-paid { --tranche: #1a9c5b; } .b-gantt-task.tranche-overdue { --tranche: #d6293e; }
+.b-gantt-task.tranche-awaiting { --tranche: #f0a400; } .b-gantt-task.tranche-draft { --tranche: #9aa3b2; }
+.b-gantt-task.tranche-refunded { --tranche: #7b3fe4; } .b-gantt-task.tranche-cancelled { --tranche: #4b5563; }
+.b-gantt-task.b-milestone[class*="tranche-"] .b-gantt-task-content::before { background: var(--tranche) !important; }
+.b-gantt-task:not(.b-milestone)[class*="tranche-"] { background: var(--tranche); }
+#gantt .b-sch-label:empty { display: none; }
+#gantt .b-sch-label { position: relative; z-index: 2; background: rgba(255,255,255,.85); border-radius: 3px; padding: 0 2px; }
 .b-gantt-task.phase-blocked { background: repeating-linear-gradient(135deg, #d6293e 0 8px, #f18a96 8px 16px) !important; }
-.b-task-baseline.ghost-preview { background: rgba(91,124,250,.25) !important; border: 2px dashed #3d5bd9 !important; border-radius: 4px; min-height: 8px; }
+/* Preview ghosts. Bryntum's baselines feature normally squeezes each bar to 40% of its height to fit the baseline
+   underneath; here the real bars keep their full height and the proposed dates are drawn as a dashed frame around
+   the bar band of the same row (milestones as a dashed diamond of the same size as the real milestone). */
+#gantt .b-baselines .b-gantt-task-wrap.b-has-baselines { height: calc(1px * var(--b-event-size)); }
+#gantt .b-baselines .b-gantt-task-wrap.b-has-baselines.b-milestone-wrap { --b-milestone-size: calc(var(--b-event-size) * 1px); }
+#gantt .b-baseline-wrap { translate: 0 -5px; height: calc(1px * var(--b-event-size) + 10px); pointer-events: none; z-index: 1; }
+#gantt .b-baseline-wrap .b-task-baseline { margin-top: 0; flex: 1; }
+.b-task-baseline.ghost-preview { background: rgba(91,124,250,.18) !important; border: 2px dashed #3d5bd9 !important; border-radius: 5px; }
+.b-task-baseline.ghost-preview.ghost-milestone { flex: none; align-self: center; width: 0 !important; min-width: 0 !important; height: 100%; background: none !important; border: 0 !important; overflow: visible; }
+.b-task-baseline.ghost-preview.ghost-milestone::after { content: ''; position: absolute; top: 50%; left: 0; width: 16px; height: 16px; box-sizing: border-box; transform: translate(-50%, -50%) rotate(45deg); border: 2px dashed #3d5bd9; background: rgba(91,124,250,.18); }
 .b-task-baseline.ghost-hidden { display: none !important; }
+.b-task-baseline .ghost-label { position: absolute; top: 50%; left: 13px; transform: translateY(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; color: #3d5bd9; background: rgba(255,255,255,.9); border-radius: 3px; padding: 0 3px; }
+#gantt .ghost-moving .b-sch-label, #gantt .ghost-moving ~ .b-sch-label { visibility: hidden; }
 .state-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; color: #fff; white-space: nowrap; }
 .state-chip.paid { background: #1a9c5b; } .state-chip.overdue { background: #d6293e; } .state-chip.awaiting { background: #f0a400; } .state-chip.draft { background: #9aa3b2; }
 .state-chip.refunded { background: #7b3fe4; } .state-chip.cancelled { background: #4b5563; }

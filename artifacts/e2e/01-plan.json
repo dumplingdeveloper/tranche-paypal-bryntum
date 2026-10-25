@@ -1,6 +1,6 @@
 {
   "written_by": "test",
-  "at": "2026-10-25T19:13:27.756Z",
+  "at": "2026-10-25T20:16:47.618Z",
   "engine": {
     "acme-discovery": {
       "start": "2026-09-28",
@@ -67,5 +67,11 @@
     "#gantt: Trial Version watermark present",
     "#capacity: Trial Version watermark present"
   ],
+  "bar_heights": {
+    "acme-t2": 18,
+    "acme-build": 18,
+    "acme-t3": 18,
+    "acme-launch": 18
+  },
   "screenshot": "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/e2e/01-plan.png"
 }

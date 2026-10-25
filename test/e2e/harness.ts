@@ -160,3 +160,36 @@ export function trialWatermark(page: Page) {
     return out;
   });
 }
+
+// Rendered geometry of Gantt bars and preview ghosts (pixels), used to prove a preview does not squeeze the real
+// bars and that milestone ghosts are drawn as full-size diamonds with their own readable label.
+export function ganttGeometry(page: Page) {
+  return page.evaluate(() => {
+    const px = (n: number) => Math.round(n * 10) / 10;
+    const bars: Record<string, { height: number; width: number }> = {};
+    document.querySelectorAll('#gantt .b-gantt-task-wrap:not(.b-gantt-task-parent)').forEach((w) => {
+      const id = (w as HTMLElement).dataset.taskId!;
+      const r = w.querySelector('.b-gantt-task')!.getBoundingClientRect();
+      bars[id] = { height: px(r.height), width: px(r.width) };
+    });
+    const labels = [...document.querySelectorAll('#gantt .b-sch-label')].filter((l) => getComputedStyle(l).visibility !== 'hidden' && l.getBoundingClientRect().width > 0);
+    const ghosts = [...document.querySelectorAll('#gantt .b-task-baseline.ghost-preview')].map((b) => {
+      const wrap = b.closest('.b-gantt-task-wrap, .b-baseline-wrap') as HTMLElement;
+      const row = b.closest('.b-grid-row') as HTMLElement | null;
+      const r = b.getBoundingClientRect();
+      const after = getComputedStyle(b, '::after');
+      const label = b.querySelector('.ghost-label');
+      const lr = label?.getBoundingClientRect();
+      const overlaps = lr ? labels.filter((l) => { const o = l.getBoundingClientRect(); return o.left < lr.right && o.right > lr.left && o.top < lr.bottom && o.bottom > lr.top; }).map((l) => (l as HTMLElement).innerText) : [];
+      return {
+        task_id: String((b.closest('[data-task-id]') as HTMLElement | null)?.dataset.taskId ?? wrap?.dataset.taskId ?? row?.dataset.id ?? '').replace(/^baselinesFor/, ''),
+        milestone: b.classList.contains('ghost-milestone'),
+        box: { height: px(r.height), width: px(r.width) },
+        diamond: b.classList.contains('ghost-milestone') ? { width: after.width, height: after.height, border: after.borderTopStyle } : null,
+        label: label ? (label as HTMLElement).innerText : null,
+        label_overlaps: overlaps,
+      };
+    });
+    return { bars, ghosts };
+  });
+}

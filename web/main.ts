@@ -91,8 +91,12 @@ const gantt = new Gantt({
     baselines: {
       disabled: true,
       renderer: ({ taskRecord, renderData }: { taskRecord: unknown; renderData: any }) => {
-        const moved = ghost?.moved.some((m) => m.task_id === (taskRecord as TR).id);
-        renderData.className = { ...(renderData.className || {}), 'ghost-preview': Boolean(moved), 'ghost-hidden': !moved };
+        const moved = ghost?.moved.find((m) => m.task_id === (taskRecord as TR).id);
+        const milestone = Boolean(moved && moved.new_start === moved.new_end);
+        renderData.className = { ...(renderData.className || {}), 'ghost-preview': Boolean(moved), 'ghost-milestone': milestone, 'ghost-hidden': !moved };
+        // A moved tranche milestone's label travels with its ghost so the two never overlap.
+        const r = rec(taskRecord);
+        return milestone && r.kind === 'tranche' ? { tag: 'span', className: 'ghost-label', text: `${r.invoiceNumber} → ${pretty(moved!.new_start)}` } : '';
       },
     },
     projectLines: false,
@@ -111,6 +115,7 @@ const gantt = new Gantt({
   taskRenderer: ({ taskRecord: t, renderData: rd }: { taskRecord: unknown; renderData: any }) => {
     const r = rec(t);
     if (r.kind === 'tranche') rd.cls[`tranche-${r.trancheState}`] = true;
+    if (r.kind === 'tranche') rd.cls['ghost-moving'] = Boolean(ghost?.moved.some((m) => m.task_id === r.id));
     if (r.kind === 'phase' && r.blockedBy) rd.cls['phase-blocked'] = true;
     return '';
   },
@@ -199,7 +204,7 @@ function refreshTaskFields(s: State) {
 function showGhost(p: ShiftPreview | null) {
   ghost = p;
   const banner = $('banner');
-  if (!p) { (gantt.features as any).baselines.disabled = true; banner.hidden = true; return; }
+  if (!p) { (gantt.features as any).baselines.disabled = true; gantt.refreshRows(); banner.hidden = true; return; }
   for (const m of p.moved) {
     const t = gantt.taskStore.getById(m.task_id) as any;
     const b = t?.baselines?.first;

@@ -1,7 +1,113 @@
 {
   "written_by": "test",
-  "at": "2026-10-25T19:13:31.766Z",
+  "at": "2026-10-25T20:16:52.312Z",
   "confirmation": "cf_0001",
+  "preview_geometry": {
+    "bars": {
+      "acme-discovery": {
+        "height": 18,
+        "width": 62.1
+      },
+      "acme-t1": {
+        "height": 18,
+        "width": 18
+      },
+      "acme-design": {
+        "height": 18,
+        "width": 124.1
+      },
+      "acme-t2": {
+        "height": 18,
+        "width": 18
+      },
+      "acme-build": {
+        "height": 18,
+        "width": 186.2
+      },
+      "acme-t3": {
+        "height": 18,
+        "width": 18
+      },
+      "acme-launch": {
+        "height": 18,
+        "width": 44.3
+      },
+      "birch-audit": {
+        "height": 18,
+        "width": 88.5
+      },
+      "birch-t1": {
+        "height": 18,
+        "width": 18
+      },
+      "birch-identity": {
+        "height": 18,
+        "width": 124
+      },
+      "birch-t2": {
+        "height": 18,
+        "width": 18
+      },
+      "birch-rollout": {
+        "height": 18,
+        "width": 62.1
+      }
+    },
+    "ghosts": [
+      {
+        "task_id": "acme-t2",
+        "milestone": true,
+        "box": {
+          "height": 28,
+          "width": 0
+        },
+        "diamond": {
+          "width": "16px",
+          "height": "16px",
+          "border": "dashed"
+        },
+        "label": "INV-2 → 10 Nov",
+        "label_overlaps": []
+      },
+      {
+        "task_id": "acme-build",
+        "milestone": false,
+        "box": {
+          "height": 28,
+          "width": 186.2
+        },
+        "diamond": null,
+        "label": null,
+        "label_overlaps": []
+      },
+      {
+        "task_id": "acme-t3",
+        "milestone": true,
+        "box": {
+          "height": 28,
+          "width": 0
+        },
+        "diamond": {
+          "width": "16px",
+          "height": "16px",
+          "border": "dashed"
+        },
+        "label": "INV-3 → 1 Dec",
+        "label_overlaps": []
+      },
+      {
+        "task_id": "acme-launch",
+        "milestone": false,
+        "box": {
+          "height": 28,
+          "width": 44.3
+        },
+        "diamond": null,
+        "label": null,
+        "label_overlaps": []
+      }
+    ]
+  },
   "engine_after_apply": {
     "acme-t2": {
       "start": "2026-11-10",
