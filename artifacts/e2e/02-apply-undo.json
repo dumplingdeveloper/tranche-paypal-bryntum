@@ -1,6 +1,6 @@
 {
   "written_by": "test",
-  "at": "2026-10-25T20:16:52.312Z",
+  "at": "2026-10-25T23:52:31.537Z",
   "confirmation": "cf_0001",
   "preview_geometry": {
     "bars": {
@@ -106,7 +106,12 @@
         "label": null,
         "label_overlaps": []
       }
-    ]
+    ],
+    "today": {
+      "line_z": 5,
+      "foreground_z": 6,
+      "badge_on_bars": []
+    }
   },
   "engine_after_apply": {
     "acme-t2": {

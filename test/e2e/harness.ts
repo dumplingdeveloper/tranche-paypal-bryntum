@@ -190,6 +190,16 @@ export function ganttGeometry(page: Page) {
         label_overlaps: overlaps,
       };
     });
-    return { bars, ghosts };
+    // The "Today" line must paint below bars and labels, and its badge must not sit on any bar.
+    const line = document.querySelector('#gantt .b-sch-time-range.b-sch-line') as HTMLElement | null;
+    const fg = document.querySelector('#gantt .b-sch-foreground-canvas') as HTMLElement | null;
+    const badge = line?.querySelector('label')?.getBoundingClientRect();
+    const today = line && fg && badge ? {
+      line_z: Number(getComputedStyle(line).zIndex),
+      foreground_z: Number(getComputedStyle(fg).zIndex),
+      badge_on_bars: [...document.querySelectorAll('#gantt .b-gantt-task')].filter((t) => { const o = t.getBoundingClientRect(); return o.width > 0 && o.left < badge.right && o.right > badge.left && o.top < badge.bottom && o.bottom > badge.top; })
+        .map((t) => String((t.closest('[data-task-id]') as HTMLElement | null)?.dataset.taskId)),
+    } : null;
+    return { bars, ghosts, today };
   });
 }

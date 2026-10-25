@@ -41,8 +41,10 @@ test('plan loads: engine dates = server scheduler; headers, task names and dates
     const geo = await ganttGeometry(page);
     assert.deepEqual(geo.ghosts, []);
     for (const id of ACME) assert.equal(geo.bars[id].height, 18, `${id} bar height`); // rowHeight 32 - 2 x barMargin 7
+    assert.ok(geo.today && geo.today.line_z < geo.today.foreground_z, `Today line must paint below bars/labels: ${JSON.stringify(geo.today)}`);
+    assert.deepEqual(geo.today.badge_on_bars, []);
     const path = await shot(page, '01-plan');
-    writeEvidence('01-plan', { engine, readability: read, watermark: wm, bar_heights: Object.fromEntries(ACME.map((id) => [id, geo.bars[id].height])), screenshot: path });
+    writeEvidence('01-plan', { engine, readability: read, watermark: wm, bar_heights: Object.fromEntries(ACME.map((id) => [id, geo.bars[id].height])), today_line: geo.today, screenshot: path });
     await context.close();
   } finally { await app.close(); }
 });
