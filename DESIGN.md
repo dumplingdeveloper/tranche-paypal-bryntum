@@ -67,7 +67,7 @@ Browser (web/)                                 Node server (src/server, one proc
 - The agent tools and the HTTP/SSE server.
 
 **Reused from entry 1** (planned; as built in M1–M3 only the *patterns* were reused and no code was copied, see BUILD_LOG "Provenance"):
-- the OAuth token cache + `paypalFetch` with `PayPal-Request-Id` + the sandbox-host guard (`hackathon_paypal/mcp-server/src/paypal/liveClient.ts`);
+- ~~the OAuth token cache + `paypalFetch` with `PayPal-Request-Id` + the sandbox-host guard (`hackathon_paypal/mcp-server/src/paypal/liveClient.ts`)~~ — superseded 2026-10-25: on the user's instruction the M4-prep sandbox client was written fresh (`src/paypal/sandboxClient.ts`), nothing copied;
 - `PayPalApiError` (`…/paypal/types.ts`);
 - the `ConfirmationBroker` pattern (`hackathon_paypal/alexa-sim/src/permissionGate.ts:18`);
 - the Copilot SDK `createSession` pattern (`hackathon_paypal/alexa-sim/src/copilotAgent.ts`).
@@ -95,7 +95,7 @@ git clone … && cd tranche && npm install && npm start      # opens http://127.
   - (b) BYOK: `TRANCHE_LLM_PROVIDER=openai|anthropic|azure TRANCHE_LLM_API_KEY=… TRANCHE_LLM_MODEL=…`. No GitHub login or subscription is needed (proven: FACTS_COPILOT_BYOK Q4).
   - (c) Local Ollama works, but is slow (140 s per turn on CPU with a 4B model).
   - (d) With no LLM at all, a **scripted agent** replays the same tool calls deterministically, so the UI flow is always demonstrable. It is clearly labelled "scripted".
-- **Optional: PayPal sandbox (M4, not built yet).** Planned: put `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env`; `npm run seed:sandbox` then creates and sends the 5 tranche invoices and the board runs live. Today `TRANCHE_PAYPAL_MODE` other than `mock` exits with "not implemented yet (M4)".
+- **Optional: PayPal sandbox (M4-prep built 2026-10-25; never run against the real sandbox yet).** Put `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `~/.config/tillwise/paypal-sandbox.env` (chmod 600) or the environment; `npm run sandbox:smoke`, then `npm run sandbox:seed` creates the 5 tranche invoices, then `TRANCHE_PAYPAL=sandbox npm start`. Without credentials all three exit 2 with "NO CREDENTIALS" and make no request. Details: README "Use the real PayPal sandbox", docs/FACTS_PAYPAL_INVOICING.md "Sandbox client".
 - **Bryntum:** `npm install` pulls the public trial packages from npm (no account needed; proven in FACTS_BRYNTUM §4). We never redistribute Bryntum code.
 
 ## 7. Differentiation vs entry 1 ("substantially different")

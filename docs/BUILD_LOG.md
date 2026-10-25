@@ -104,6 +104,7 @@ Commits: `c7072ac` (M1), `e429822` (M2), `5732400` (M3 live + SDK), then the doc
 | Date | From (entry 1 path) | To | Change |
 |---|---|---|---|
 | — | none (M1–M3 copied no entry-1 code; the broker, audit log, mock client and Copilot runner were written fresh) | — | — |
+| — | none (M4-prep, 2026-10-25: the sandbox client, seed/smoke scripts and the stub server were written fresh; entry 1's `liveClient.ts` was **not** opened or copied, on the user's instruction) | — | — |
 
 - **Third-party code copied:** none. New dependencies: `@paypal/paypal-server-sdk@2.5.0` (MIT, `npm view` → `license = 'MIT'`), `playwright-core@1.56.1` (dev, Apache-2.0).
 
@@ -112,3 +113,40 @@ Commits: `c7072ac` (M1), `e429822` (M2), `5732400` (M3 live + SDK), then the doc
 - **Bryntum licence facts for judging:** docs/FACTS_BRYNTUM_LICENCE.md.
 - **Video pipeline copied** from the author's `hackathon_amazon/video/scripts` (GPL-2.0-or-later, kept as such in `video/`, md5s in video/LICENSES.md). Not rendered.
 - **Live runs:** none in this step (Mac on battery, 19% → 10%, `pmset -g batt` "Battery Power"). Live total stays 4 turns. The live screenshots `artifacts/screenshots/live/L*.png` therefore still show the pre-M3.1 ghost style.
+
+## 2026-10-25 — M4-prep: PayPal sandbox client, ready except for credentials
+User go-ahead 2026-10-25T20:26Z. No live model runs and **no PayPal network calls** in this step (there are no
+credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
+
+- **Interface:** `InvoicingClient` (`src/paypal/invoicing.ts`) gained `calls`, `remindersOn()` and an optional
+  `baseUrl`; `InvoicingError` gained `debugId`. The mock is unchanged in behaviour.
+- **Client** `src/paypal/sandboxClient.ts` (commit `f396fc7`, written fresh): REST Invoicing v2 on
+  `https://api-m.sandbox.paypal.com`; OAuth2 client_credentials with the token cached until `expires_in − 60 s`;
+  create draft / get / list / search / send / remind / record payment / record refund / cancel / delete draft;
+  status mapping with overdue derived from the due date; 429 retried (Retry-After or 500 ms × 2ⁿ), 5xx/network
+  retried for reads only (no `PayPal-Request-Id` in the Invoicing spec, so POSTs are not blindly repeated);
+  PayPal-Debug-Id in every error; secrets masked. Every shape is cited in docs/FACTS_PAYPAL_INVOICING.md
+  "Sandbox client".
+- **Mode switch** (commit `c2bc434`): `TRANCHE_PAYPAL=sandbox` (legacy `TRANCHE_PAYPAL_MODE` accepted). Missing
+  credentials → `NO CREDENTIALS`, exit 2, no request. Missing demo invoices → asks for `npm run sandbox:seed`,
+  exit 2. Watcher polls every 30 s (`TRANCHE_POLL_MS`). Badge `PayPal: SANDBOX` (blue), or
+  `PayPal: SANDBOX API · local stub` when the base URL is the loopback stub. *Client pays via PayPal* is disabled in
+  sandbox mode (`409 NEEDS_BROWSER_PAYER`); the other demo controls call the API and are audited as
+  `sandbox.demo_control`.
+- **Scripts:** `npm run sandbox:seed` (idempotent, `TRANCHE-` numbers, reference `tranche-demo/v1`, due-date
+  fallback, drift report) and `npm run sandbox:smoke` (read-only plus one draft that is always deleted).
+- **Tests** (commits `fc00e76`, `9ca9bf6`, `e210ce0`): `test/unit/sandboxClient.test.ts` (22 tests) against
+  `test/unit/helpers/paypalStub.ts`, a local `node:http` stub shaped from the spec (stub-only behaviour is marked
+  `STUB_`). `test/unit/helpers/netSpy.mjs` is preloaded into child processes to prove the no-credentials paths make
+  no `fetch` and no TCP connect (with a positive control). `test/e2e/sandbox.e2e.ts` drives the real UI in sandbox
+  mode against the stub and writes `artifacts/screenshots/e2e/08-sandbox-mode-local-stub.png` and
+  `artifacts/e2e/08-sandbox-mode-local-stub.json`.
+- **Bugs the tests found and fixed:** the Basic-auth base64 of `client_id:secret` was not masked (the secrets test
+  failed with `leaked QWZha2…`); an old access token would no longer be masked after a refresh (now every token
+  ever held is masked); an `InvoicingError` with status 0 (network) would have crashed the HTTP response (now 502).
+- **APIMatic:** no APIMatic skill was used in this step. The sandbox client is plain REST because the PayPal Server
+  SDK 2.5.0 has no Invoicing controller (user-verified fact); the APIMatic-guided SDK module from M3
+  (`src/paypal/sdkPaymentCheck.ts`) is unchanged and still not wired in.
+- **Results:** `npm test` 57/57, `npm run test:e2e` 9/9, `npx tsc` clean. The re-rendered screenshots of the 8
+  earlier e2e tests only differed by timestamps and were restored with `git checkout -- artifacts`.
+- **Unverified until a real sandbox run:** see docs/FACTS_PAYPAL_INVOICING.md §8.

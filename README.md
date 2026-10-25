@@ -2,8 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Status: **M1–M3 built** (mock PayPal, Bryntum board, real-model agent). The live PayPal sandbox (M4) is **not
-built yet**. See [DESIGN.md](DESIGN.md) and [docs/BUILD_LOG.md](docs/BUILD_LOG.md).
+Status: **M1–M3 built** (mock PayPal, Bryntum board, real-model agent). **M4-prep built**: a PayPal sandbox
+client (REST Invoicing v2) behind `TRANCHE_PAYPAL=sandbox`, tested against a local stub only. It has **not yet been
+run against the real PayPal sandbox** (no sandbox credentials yet). See [DESIGN.md](DESIGN.md) and
+[docs/BUILD_LOG.md](docs/BUILD_LOG.md).
 
 Freelancers and small agencies bill client work in PayPal invoice "tranches". Tranche puts every tranche on a
 Bryntum Gantt as a milestone that the next phase depends on, so a late, failed or refunded PayPal payment visibly
@@ -43,15 +45,47 @@ The Ollama path is unit-tested for its config only in this build; the Phase A sp
 `npm start` binds `127.0.0.1:4317`. If 4317 is busy it takes the next free port up to 4336 and prints it.
 Set `PORT=…` to choose another start port. The tests start their own servers on free ports from 4317 upward.
 
-### PayPal sandbox (not built yet)
-Only the mock is implemented. `TRANCHE_PAYPAL_MODE=sandbox npm start` exits with "not implemented yet (milestone
-M4: live PayPal sandbox)". The code is ready for it: everything talks to PayPal through the `InvoicingClient`
-interface (`src/paypal/invoicing.ts`), and the mock implements it. The live client is planned as REST calls to
-PayPal Invoicing v2 (the PayPal Server SDK 2.5.0 has no Invoicing controller), with credentials from
-`PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` in a git-ignored `.env` (DESIGN.md §6). An optional
-cross-check that a paid invoice's transaction exists, written with the PayPal Server SDK
-(`src/paypal/sdkPaymentCheck.ts`), is unit-tested against a stub but has **never been run against the sandbox**.
-See docs/FACTS_PAYPAL_INVOICING.md and DESIGN.md §6.
+### Use the real PayPal sandbox
+> **Honest status:** the sandbox client is written and tested against a local stub of the Invoicing v2 API
+> (`npm test`, `npm run test:e2e`), but it has **not yet been run against api-m.sandbox.paypal.com**. Mock mode
+> (the default) needs none of this.
+
+Steps for a judge with their own PayPal developer account:
+1. Follow PayPal's own steps (https://developer.paypal.com/api/rest/, "Get client ID and client secret"):
+   "Select Log in to Dashboard and log in or sign up. Select Apps & Credentials. New accounts come with a Default
+   Application in the REST API apps section. To create a new project, select Create App. Copy the client ID and
+   client secret for your app." Use the sandbox credentials (Tranche only calls the sandbox host).
+2. Put them in the credentials file (or export the same two variables, which override the file):
+   ```bash
+   mkdir -p ~/.config/tillwise
+   printf 'PAYPAL_CLIENT_ID=%s\nPAYPAL_CLIENT_SECRET=%s\n' '<client id>' '<secret>' > ~/.config/tillwise/paypal-sandbox.env
+   chmod 600 ~/.config/tillwise/paypal-sandbox.env
+   ```
+   Tranche never prints, logs or commits these values; errors show `***` instead.
+3. `npm run sandbox:smoke`: gets a token, lists and searches invoices (read-only), creates one draft
+   `TRANCHE-SMOKE-…` and deletes it again. Prints `ok`/`FAIL` per step.
+4. `npm run sandbox:seed`: creates the five demo invoices `TRANCHE-INV-1…5` in your sandbox (idempotent: reruns
+   find them by number instead of duplicating), sends INV-2/INV-5 as share links (no PayPal e-mail), records the
+   INV-1/INV-4 payments as external bank transfers, and prints a table of ids and statuses.
+5. `TRANCHE_PAYPAL=sandbox npm start`: the header badge says **PayPal: SANDBOX**; the app polls
+   `search-invoices` every 30 s (`TRANCHE_POLL_MS`). If the demo invoices are missing it exits and asks you to run
+   the seed.
+
+What to know:
+- Without credentials, `sandbox:smoke`, `sandbox:seed` and `TRANCHE_PAYPAL=sandbox npm start` print
+  `NO CREDENTIALS` and exit 2 **without any network request**.
+- "9 days overdue" is computed from the invoice's due date and the demo clock (`TRANCHE_TODAY`, default
+  2026-11-03); PayPal has no OVERDUE status. Whether PayPal accepts a past due date at create time is unverified,
+  so the seed has a documented fallback ([docs/FACTS_PAYPAL_INVOICING.md](docs/FACTS_PAYPAL_INVOICING.md) §6).
+- *Client pays via PayPal* is disabled in sandbox mode: a real PayPal payment needs a sandbox buyer paying the
+  invoice link in a browser. *Record bank transfer* records the payment through the API instead.
+- Only invoices whose number starts with `TRANCHE-` are read or changed. `TRANCHE_INVOICE_PREFIX=TR2-` seeds a
+  fresh set if a rehearsal left INV-2 paid.
+- The client only talks to `https://api-m.sandbox.paypal.com`; the live host is refused in code.
+
+The PayPal Server SDK 2.5.0 has no Invoicing controller, so the client uses REST. An optional cross-check that a
+paid invoice's transaction exists, written with the PayPal Server SDK (`src/paypal/sdkPaymentCheck.ts`), is
+unit-tested against a stub, is not wired into the app, and has **never been run against the sandbox**.
 
 ### Bryntum trial
 `npm install` fetches Bryntum Gantt, Scheduler and Calendar as the public npm **trial** packages
@@ -71,8 +105,10 @@ quotes: [docs/FACTS_BRYNTUM_LICENCE.md](docs/FACTS_BRYNTUM_LICENCE.md).
 ## Tests
 
 ```bash
-npm test             # 35 unit tests (scheduler, mock PayPal, broker, tools, API, SDK contract)
-npm run test:e2e     # 8 Playwright tests through the real UI (scripted agent; headless Chrome)
+npm test             # 57 unit tests (scheduler, mock PayPal, sandbox client vs a local stub, broker, tools, API, SDK contract)
+npm run test:e2e     # 9 Playwright tests through the real UI (scripted agent; headless Chrome; 1 in sandbox mode vs the stub)
+npm run sandbox:smoke  # real PayPal sandbox, needs your credentials (see above)
+npm run sandbox:seed   # real PayPal sandbox, needs your credentials (see above)
 npm run test:byok    # BYOK wiring against a local stub endpoint with a fake key (no network)
 npm run test:live    # real model through the real UI (needs a Copilot login; set EXPECTED_GITHUB_LOGIN=<you>)
 ```
