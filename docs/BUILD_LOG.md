@@ -143,7 +143,7 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
   `artifacts/e2e/08-sandbox-mode-local-stub.json`.
 - **Bugs the tests found and fixed:** the Basic-auth base64 of `client_id:secret` was not masked (the secrets test
   failed with `leaked QWZha2…`); an old access token would no longer be masked after a refresh (now every token
-  ever held is masked); an `InvoicingError` with status 0 (network) would have crashed the HTTP response (now 502).
+  ever held is masked); an `InvoicingError` with status 0 (network) made `writeHead(0)` throw, so the API answered a bare 500 (now 502 with the PayPal error).
 - **APIMatic:** no APIMatic skill was used in this step. The sandbox client is plain REST because the PayPal Server
   SDK 2.5.0 has no Invoicing controller (user-verified fact); the APIMatic-guided SDK module from M3
   (`src/paypal/sdkPaymentCheck.ts`) is unchanged and still not wired in.
