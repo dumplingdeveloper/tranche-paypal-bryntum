@@ -131,6 +131,8 @@ export class SandboxInvoicingClient implements InvoicingClient {
   readonly prefix: string;
   private token?: { value: string; expiresAt: number };
   private tokenPromise?: Promise<string>;
+  // Every token this client has held, so an old token is still masked after a refresh.
+  private seenTokens = new Set<string>();
 
   constructor(o: SandboxClientOptions) {
     if (!o.credentials?.clientId || !o.credentials?.clientSecret) throw new InvoicingError(0, 'NO_CREDENTIALS', 'NO CREDENTIALS: PayPal sandbox client needs PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
@@ -152,7 +154,8 @@ export class SandboxInvoicingClient implements InvoicingClient {
   /** Replace any credential or token value in a string before it is logged or thrown. */
   mask(text: string) {
     let out = String(text);
-    for (const s of [this.creds.clientSecret, this.creds.clientId, this.token?.value]) if (s && s.length >= 4) out = out.split(s).join('***');
+    const basic = Buffer.from(`${this.creds.clientId}:${this.creds.clientSecret}`).toString('base64');
+    for (const s of [basic, this.creds.clientSecret, this.creds.clientId, ...this.seenTokens]) if (s && s.length >= 4) out = out.split(s).join('***');
     return out;
   }
 
@@ -173,6 +176,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
         if (!body.access_token) throw new InvoicingError(502, 'TOKEN_MISSING', 'PayPal token response had no access_token');
         const ttl = Math.max(0, Number(body.expires_in || 0) - 60) * 1000;
         this.token = { value: String(body.access_token), expiresAt: Date.now() + ttl };
+        this.seenTokens.add(this.token.value);
         return this.token.value;
       })().finally(() => { this.tokenPromise = undefined; });
     }
@@ -213,7 +217,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
     const message = this.mask(`PayPal ${method} ${path} → ${res.status} ${issue}: ${detail?.description || body.message || body.error_description || text.slice(0, 200)} (PayPal-Debug-Id ${debugId})`);
     this.log(message);
     const err = new InvoicingError(res.status, issue, message);
-    (err as any).debugId = debugId;
+    err.debugId = debugId;
     return err;
   }
 

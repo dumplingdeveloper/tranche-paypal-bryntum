@@ -254,7 +254,7 @@ export async function createTranche(opts: TrancheOptions) {
       throw new HttpError(404, 'NOT_FOUND', 'not found');
     } catch (err) {
       if (err instanceof HttpError || err instanceof BrokerError) return send(res, err.status, { error: { code: err.code, message: err.message } });
-      if (err instanceof InvoicingError) return send(res, err.status, { error: { code: err.issue, message: err.message } });
+      if (err instanceof InvoicingError) return send(res, err.status >= 400 ? err.status : 502, { error: { code: err.issue, message: err.message } });
       return send(res, 500, { error: { code: 'INTERNAL', message: (err as Error).message } });
     }
   }

@@ -43,6 +43,8 @@ export interface InvoicingClient {
 export class InvoicingError extends Error {
   status: number;
   issue: string;
+  /** PayPal-Debug-Id of the failed response (sandbox client only). */
+  debugId?: string;
   constructor(status: number, issue: string, message: string) {
     super(message);
     this.status = status;
