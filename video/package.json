@@ -1,0 +1,19 @@
+{
+  "name": "tranche-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "description": "Demo video pipeline copied unmodified from the author's hackathon_amazon/video (see video/LICENSES.md).",
+  "scripts": {
+    "tts": "node scripts/tts.js",
+    "record": "node scripts/record.js",
+    "compose": "node scripts/compose.js",
+    "video": "node scripts/video.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.0",
+    "kokoro-js": "1.2.1",
+    "playwright-core": "1.56.1"
+  }
+}

@@ -106,3 +106,9 @@ Commits: `c7072ac` (M1), `e429822` (M2), `5732400` (M3 live + SDK), then the doc
 | — | none (M1–M3 copied no entry-1 code; the broker, audit log, mock client and Copilot runner were written fresh) | — | — |
 
 - **Third-party code copied:** none. New dependencies: `@paypal/paypal-server-sdk@2.5.0` (MIT, `npm view` → `license = 'MIT'`), `playwright-core@1.56.1` (dev, Apache-2.0).
+
+## 2026-10-25 — M3.1 + M5 prep
+- **Preview cosmetics (commit `ebf6eac`).** Cause, from `node_modules/@bryntum/gantt/gantt.css`: `.b-baselines .b-gantt-task-wrap.b-has-baselines{height:calc(1px * (1 - var(--b-baseline-wrap-size)) * var(--b-event-size))}` with `--b-baseline-wrap-size: .6`, so bars shrank from 18 px to 7.19 px while a preview was shown (measured in Chrome before the fix). `web/app.css` now keeps bars at full height and draws ghosts as a dashed frame around the bar band; milestone ghosts are 16 px dashed diamonds carrying their own label (`INV-2 → 10 Nov`), and the moved milestone's own label is hidden during the preview so labels never overlap. Tranche diamonds are now coloured through `.b-gantt-task-content::before` (previously the status colour filled a square behind the diamond). `test/e2e/board.e2e.ts` asserts 18 px bars in plan and preview, the diamond size, the ghost labels and zero label overlaps (`artifacts/e2e/02-apply-undo.json` → `preview_geometry`).
+- **Bryntum licence facts for judging:** docs/FACTS_BRYNTUM_LICENCE.md.
+- **Video pipeline copied** from the author's `hackathon_amazon/video/scripts` (GPL-2.0-or-later, kept as such in `video/`, md5s in video/LICENSES.md). Not rendered.
+- **Live runs:** none in this step (Mac on battery, 19% → 10%, `pmset -g batt` "Battery Power"). Live total stays 4 turns. The live screenshots `artifacts/screenshots/live/L*.png` therefore still show the pre-M3.1 ghost style.
