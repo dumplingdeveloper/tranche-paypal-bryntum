@@ -1,4 +1,4 @@
-import type { ClientProject, PayPalInvoice } from './types.ts';
+import type { Assignment, ClientProject, PayPalInvoice, Resource } from './types.ts';
 
 // Deterministic demo clock so screenshots, tests and the video never drift.
 export const DEMO_TODAY = '2026-11-03';
@@ -11,7 +11,7 @@ export const MOCK_INVOICES: PayPalInvoice[] = [
     id: 'INV2-ACME-0001', status: 'PAID', amount: eur('3600.00'),
     detail: { invoice_number: 'INV-1', currency_code: 'EUR', invoice_date: '2026-09-28', payment_term: { term_type: 'DUE_ON_DATE_SPECIFIED', due_date: '2026-10-05' } },
     primary_recipients: recipient('Acme Coffee Roasters', 'accounts@acme-coffee.example'),
-    payments: { paid_amount: eur('3600.00'), transactions: [{ payment_date: '2026-10-04', method: 'PAYPAL', type: 'PAYPAL' }] },
+    payments: { paid_amount: eur('3600.00'), transactions: [{ payment_id: 'MOCKTX-ACME-0001', payment_date: '2026-10-04', method: 'PAYPAL', type: 'PAYPAL', amount: eur('3600.00') }] },
   },
   {
     id: 'INV2-ACME-0002', status: 'SENT', amount: eur('4800.00'),
@@ -27,11 +27,11 @@ export const MOCK_INVOICES: PayPalInvoice[] = [
     id: 'INV2-BIRCH-0004', status: 'PAID', amount: eur('3000.00'),
     detail: { invoice_number: 'INV-4', currency_code: 'EUR', invoice_date: '2026-10-12', payment_term: { term_type: 'DUE_ON_DATE_SPECIFIED', due_date: '2026-10-22' } },
     primary_recipients: recipient('Birch & Pine Studio', 'hello@birchpine.example'),
-    payments: { paid_amount: eur('3000.00'), transactions: [{ payment_date: '2026-10-20', method: 'PAYPAL', type: 'PAYPAL' }] },
+    payments: { paid_amount: eur('3000.00'), transactions: [{ payment_id: 'MOCKTX-BIRCH-0004', payment_date: '2026-10-20', method: 'PAYPAL', type: 'PAYPAL', amount: eur('3000.00') }] },
   },
   {
     id: 'INV2-BIRCH-0005', status: 'SENT', amount: eur('3000.00'),
-    detail: { invoice_number: 'INV-5', currency_code: 'EUR', invoice_date: '2026-10-29', payment_term: { term_type: 'DUE_ON_DATE_SPECIFIED', due_date: '2026-11-12' } },
+    detail: { invoice_number: 'INV-5', currency_code: 'EUR', invoice_date: '2026-11-02', payment_term: { term_type: 'DUE_ON_DATE_SPECIFIED', due_date: '2026-11-16' } },
     primary_recipients: recipient('Birch & Pine Studio', 'hello@birchpine.example'),
   },
 ];
@@ -59,4 +59,21 @@ export const PROJECTS: ClientProject[] = [
       { kind: 'phase', id: 'birch-rollout', name: 'Rollout & templates', durationDays: 7 },
     ],
   },
+];
+
+export const TEAM: Resource[] = [
+  { id: 'mei', name: 'Mei', role: 'Project lead' },
+  { id: 'ravi', name: 'Ravi', role: 'Designer' },
+  { id: 'dana', name: 'Dana', role: 'Developer' },
+];
+
+export const ASSIGNMENTS: Assignment[] = [
+  { id: 'a1', event: 'acme-discovery', resource: 'mei' },
+  { id: 'a2', event: 'acme-design', resource: 'ravi' },
+  { id: 'a3', event: 'acme-build', resource: 'dana' },
+  { id: 'a5', event: 'acme-launch', resource: 'mei' },
+  { id: 'a6', event: 'birch-audit', resource: 'mei' },
+  { id: 'a7', event: 'birch-identity', resource: 'ravi' },
+  { id: 'a8', event: 'birch-rollout', resource: 'dana' },
+  { id: 'a9', event: 'birch-rollout', resource: 'ravi' },
 ];

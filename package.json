@@ -13,16 +13,18 @@
   },
   "devDependencies": {
     "@types/node": "26.0.0",
+    "playwright-core": "1.56.1",
     "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "node src/server/dev.ts",
+    "start": "node --disable-warning=ExperimentalWarning src/server/main.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.ts",
-    "screenshot": "node scripts/screenshot.ts",
-    "spike:agent": "node src/agent/spikeAgent.ts"
+    "test": "node --disable-warning=ExperimentalWarning --test test/unit/*.test.ts",
+    "test:e2e": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/e2e/*.e2e.ts",
+    "test:live": "TRANCHE_LIVE=1 node --disable-warning=ExperimentalWarning --test test/live/*.live.ts",
+    "probe:trial-clock": "node --disable-warning=ExperimentalWarning scripts/trial-clock-probe.ts"
   }
 }

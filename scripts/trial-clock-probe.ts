@@ -1,12 +1,14 @@
 // Probes Bryntum trial expiry behaviour by faking the browser clock (Playwright clock API). Usage: node scripts/trial-clock-probe.ts
 import { createRequire } from 'node:module';
 import { writeFile } from 'node:fs/promises';
-import { startDevServer } from '../src/server/dev.ts';
+import { createTranche } from '../src/server/app.ts';
+import { ScriptedAgent } from '../src/agent/scripted.ts';
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PLAYWRIGHT_CORE || '/Users/shiyx/Downloads/claude_folder/hackathon_amazon/video/node_modules/playwright-core');
+const { chromium } = require('playwright-core');
 const port = Number(process.env.PORT || 4318);
-const server = await startDevServer(port);
+const server = await createTranche({ agent: (h) => new ScriptedAgent(h) });
+await server.listen(port);
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const dates = (process.env.PROBE_DATES || '2026-10-17,2026-11-09,2026-11-30,2026-12-31,2027-03-01').split(',');
 const out: Record<string, unknown> = {};
@@ -31,7 +33,7 @@ try {
   }
 } finally {
   await browser.close();
-  server.close();
+  await server.close();
 }
 await writeFile('artifacts/logs/trial-clock-probe.json', JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out, null, 2));
