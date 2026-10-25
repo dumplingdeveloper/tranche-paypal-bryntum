@@ -39,7 +39,8 @@ export async function openBoard(browser: Browser, base: string, opts: { timezone
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`console.error: ${m.text()}`); });
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(`console.error: ${m.text()}${m.location()?.url && process.env.TRANCHE_LIVE === '1' ? ` @ ${m.location().url} ${new Date().toISOString()}` : ''}`); });
+  page.on('requestfailed', (r) => { if (process.env.TRANCHE_LIVE === '1') console.log(`[requestfailed] ${new Date().toISOString()} ${r.method()} ${r.url()} ${r.failure()?.errorText}`); });
   await page.goto(`${base}/`);
   await page.waitForFunction(() => (window as any).__tranche?.ready === true, null, { timeout: 30_000 });
   await waitReport(page, 'load');

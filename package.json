@@ -9,7 +9,8 @@
     "@bryntum/calendar": "npm:@bryntum/calendar-trial@7.3.7",
     "@bryntum/gantt": "npm:@bryntum/gantt-trial@7.3.7",
     "@bryntum/scheduler": "npm:@bryntum/scheduler-trial@7.3.7",
-    "@github/copilot-sdk": "1.0.15"
+    "@github/copilot-sdk": "1.0.15",
+    "@paypal/paypal-server-sdk": "^2.5.0"
   },
   "devDependencies": {
     "@types/node": "26.0.0",
@@ -24,7 +25,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --disable-warning=ExperimentalWarning --test test/unit/*.test.ts",
     "test:e2e": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/e2e/*.e2e.ts",
-    "test:live": "TRANCHE_LIVE=1 node --disable-warning=ExperimentalWarning --test test/live/*.live.ts",
+    "test:live": "TRANCHE_LIVE=1 TRANCHE_SHOT_DIR=artifacts/screenshots/live TRANCHE_EVIDENCE_DIR=artifacts/live EXPECTED_GITHUB_LOGIN=${EXPECTED_GITHUB_LOGIN:-yuxinshiu63} node --disable-warning=ExperimentalWarning --test --test-timeout=900000 test/live/*.live.ts",
     "probe:trial-clock": "node --disable-warning=ExperimentalWarning scripts/trial-clock-probe.ts"
   }
 }

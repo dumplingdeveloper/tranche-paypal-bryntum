@@ -1,0 +1,219 @@
+{
+  "written_by": "test",
+  "at": "2026-10-25T19:02:44.024Z",
+  "run_id": "live-2026-10-25T19-02-17-629Z",
+  "model": "gpt-6-luna",
+  "auth": "copilot-login:yuxinshiu63",
+  "agent": {
+    "mode": "copilot",
+    "live": true,
+    "model": "gpt-6-luna",
+    "auth": "copilot-login:yuxinshiu63",
+    "label": "Copilot · gpt-6-luna"
+  },
+  "live_user_turns": 2,
+  "model_requests_total": 7,
+  "turns": [
+    {
+      "turn_id": "t1",
+      "mode": "copilot",
+      "model": "gpt-6-luna",
+      "live": true,
+      "prompt": "Invoice INV-2 for Acme is 9 days overdue. What should happen to the plan?",
+      "model_requests": 4,
+      "duration_ms": 13699,
+      "tool_calls": [
+        {
+          "tool": "get_board_status",
+          "args": {},
+          "ok": true
+        },
+        {
+          "tool": "schedule_shift_preview",
+          "args": {
+            "invoice_number": "INV-2",
+            "reason": "overdue 9 days"
+          },
+          "ok": true
+        },
+        {
+          "tool": "get_reminder_facts",
+          "args": {
+            "invoice_number": "INV-2"
+          },
+          "ok": true
+        },
+        {
+          "tool": "request_schedule_change",
+          "args": {
+            "preview_id": "pv_shift_INV-2_2026-11-10",
+            "note_to_owner": "INV-2 is 9 days overdue; preview shifts the dependent Acme phases using the policy default payment date."
+          },
+          "ok": true
+        },
+        {
+          "tool": "request_payment_reminder",
+          "args": {
+            "invoice_number": "INV-2",
+            "friendly_note": "Hi Acme team, just a friendly note that invoice INV-2 for €4,800 is now overdue. It blocks the Build & integrations phase. Could you please let us know when payment is expected? Thanks!"
+          },
+          "ok": true
+        }
+      ],
+      "text": "Using the policy-default assumed payment date of 2026-11-10, INV-2 and Build & integrations move 16 days later; Tranche 3 and Launch & handover move 9 days later. Acme’s delivery slips 9 days, and Dana’s Build booking would conflict with Birch & Pine’s rollout from 2026-11-16 through 2026-11-23 (7 days). Schedule-change and payment-reminder approvals are waiting for the owner. Nothing has been applied or sent yet."
+    },
+    {
+      "turn_id": "t2",
+      "mode": "copilot",
+      "model": "gpt-6-luna",
+      "live": true,
+      "prompt": "INV-2 was just paid on PayPal. Update the plan?",
+      "model_requests": 3,
+      "duration_ms": 7883,
+      "tool_calls": [
+        {
+          "tool": "schedule_release_preview",
+          "args": {
+            "invoice_number": "INV-2"
+          },
+          "ok": true
+        },
+        {
+          "tool": "request_schedule_change",
+          "args": {
+            "preview_id": "pv_release_INV-2_2026-11-03",
+            "note_to_owner": "INV-2 was paid on PayPal on 2026-11-03; align the dependent Acme phases to the actual payment date."
+          },
+          "ok": true
+        }
+      ],
+      "text": "The payment-date preview moves Tranche 2 and Build & integrations 7 days earlier, to 2026-11-03, and moves Tranche 3 and Launch & handover 7 days earlier, to 2026-11-24; Acme’s delivery gains 7 days. The preview shows no new team booking conflicts. A schedule-change approval is waiting for the owner; nothing has been applied yet."
+    }
+  ],
+  "confirmations": [
+    "cf_0001",
+    "cf_0003"
+  ],
+  "preview_moves": [
+    {
+      "task_id": "acme-t2",
+      "project": "Acme Coffee Roasters — Online shop rebuild",
+      "name": "Tranche 2 (40%) · INV-2",
+      "kind": "tranche",
+      "old_start": "2026-10-25",
+      "old_end": "2026-10-25",
+      "new_start": "2026-11-10",
+      "new_end": "2026-11-10",
+      "delta_days": 16
+    },
+    {
+      "task_id": "acme-build",
+      "project": "Acme Coffee Roasters — Online shop rebuild",
+      "name": "Build & integrations",
+      "kind": "phase",
+      "old_start": "2026-10-25",
+      "old_end": "2026-11-15",
+      "new_start": "2026-11-10",
+      "new_end": "2026-12-01",
+      "delta_days": 16
+    },
+    {
+      "task_id": "acme-t3",
+      "project": "Acme Coffee Roasters — Online shop rebuild",
+      "name": "Tranche 3 (30%) · INV-3",
+      "kind": "tranche",
+      "old_start": "2026-11-22",
+      "old_end": "2026-11-22",
+      "new_start": "2026-12-01",
+      "new_end": "2026-12-01",
+      "delta_days": 9
+    },
+    {
+      "task_id": "acme-launch",
+      "project": "Acme Coffee Roasters — Online shop rebuild",
+      "name": "Launch & handover",
+      "kind": "phase",
+      "old_start": "2026-11-22",
+      "old_end": "2026-11-27",
+      "new_start": "2026-12-01",
+      "new_end": "2026-12-06",
+      "delta_days": 9
+    }
+  ],
+  "engine_after_apply": {
+    "acme-t2": {
+      "start": "2026-11-10",
+      "end": "2026-11-10"
+    },
+    "acme-build": {
+      "start": "2026-11-10",
+      "end": "2026-12-01"
+    },
+    "acme-t3": {
+      "start": "2026-12-01",
+      "end": "2026-12-01"
+    },
+    "acme-launch": {
+      "start": "2026-12-01",
+      "end": "2026-12-06"
+    }
+  },
+  "engine_after_release": {
+    "acme-t2": {
+      "start": "2026-11-03",
+      "end": "2026-11-03"
+    },
+    "acme-build": {
+      "start": "2026-11-03",
+      "end": "2026-11-24"
+    },
+    "acme-t3": {
+      "start": "2026-11-24",
+      "end": "2026-11-24"
+    },
+    "acme-launch": {
+      "start": "2026-11-24",
+      "end": "2026-11-29"
+    }
+  },
+  "stm": {
+    "position": 2,
+    "queue": [
+      "cf_0001",
+      "cf_0003"
+    ],
+    "canUndo": true
+  },
+  "audit_actions": [
+    "system:agent.mode",
+    "system:paypal.event",
+    "browser:engine.verified",
+    "agent:agent.tool_call",
+    "agent:agent.tool_call",
+    "agent:agent.tool_call",
+    "agent:confirmation.requested",
+    "agent:agent.tool_call",
+    "agent:confirmation.requested",
+    "agent:agent.tool_call",
+    "agent:agent.turn",
+    "owner:schedule.applied",
+    "owner:confirmation.approved",
+    "browser:engine.verified",
+    "demo-control:mock.simulate",
+    "system:confirmation.marked_stale",
+    "paypal:paypal.event",
+    "agent:agent.tool_call",
+    "agent:confirmation.requested",
+    "agent:agent.tool_call",
+    "agent:agent.turn",
+    "owner:schedule.applied",
+    "owner:confirmation.approved",
+    "browser:engine.verified"
+  ],
+  "screenshots": [
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/live/L1-live-preview-INV-2.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/live/L2-live-applied-INV-2.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/live/L3-live-release-preview.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/live/L4-live-release-applied.png"
+  ]
+}
