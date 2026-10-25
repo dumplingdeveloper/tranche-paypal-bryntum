@@ -356,7 +356,7 @@ test('smoke: reads, creates one draft and always deletes it again', async () => 
 test('app in sandbox mode: badge mode, polling watcher sees PayPal changes, payer_pays refused, demo controls call the API', async () => {
   const { stub, client } = await setup();
   await seedSandbox(client, { demoToday: '2026-11-03', realToday: '2026-11-03' });
-  const app = await createTranche({ today: '2026-11-03', invoicing: client, agent: (h) => new ScriptedAgent(h) });
+  const app = await createTranche({ today: '2026-11-03', invoicing: client, realToday: () => '2026-11-03', agent: (h) => new ScriptedAgent(h) });
   try {
     const port = await app.listen(0);
     const base = `http://127.0.0.1:${port}`;

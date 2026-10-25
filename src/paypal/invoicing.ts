@@ -18,6 +18,8 @@ export type InvoicingCall = { op: string; invoice_id: string; at: string; detail
 
 export interface InvoicingClient {
   readonly mode: 'mock' | 'sandbox';
+  /** Base URL of the PayPal API in use (sandbox client only). */
+  readonly baseUrl?: string;
   /** Calls made by this process (no secrets), shown in the UI and audit. */
   readonly calls: InvoicingCall[];
   /** Reminders this process sent for the invoice on the given day (PayPal allows 2 per day, INV:480). */

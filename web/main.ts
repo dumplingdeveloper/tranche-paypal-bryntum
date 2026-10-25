@@ -16,7 +16,7 @@ type State = {
   conflicts: Array<{ resource: string; resource_name: string; task_a: string; task_b: string; overlap_start: string; overlap_end: string }>;
   applied: Array<{ confirmation_id: string }>;
   gantt: { tasks: GanttTaskData[]; dependencies: unknown[]; resources: unknown[]; assignments: unknown[] };
-  modes: { paypal: string; agent: { mode: string; label: string; live: boolean; model?: string; reason?: string } };
+  modes: { paypal: string; paypal_endpoint?: string | null; agent: { mode: string; label: string; live: boolean; model?: string; reason?: string } };
   confirmations: Conf[];
   audit: Array<{ seq: number; at: string; actor: string; action: string; details: Record<string, unknown> }>;
   events: Array<{ id: string; event_type: string; source: string; summary: string; initial: boolean }>;
@@ -254,12 +254,14 @@ function renderTop(s: State) {
   badge.title = a.reason || a.label;
   const sandbox = s.modes.paypal === 'sandbox';
   const pp = $('paypal-mode');
-  pp.textContent = `PayPal: ${s.modes.paypal.toUpperCase()}`;
+  // The sandbox client only accepts api-m.sandbox.paypal.com or a loopback stub (tests); say which one is in use.
+  const realSandbox = s.modes.paypal_endpoint === 'https://api-m.sandbox.paypal.com';
+  pp.textContent = sandbox && !realSandbox ? 'PayPal: SANDBOX API · local stub' : `PayPal: ${s.modes.paypal.toUpperCase()}`;
   pp.className = `pill ${sandbox ? 'sandbox' : 'mock'}`;
-  pp.title = sandbox ? 'Real PayPal sandbox (api-m.sandbox.paypal.com), REST Invoicing v2, polled. Sandbox money is not real.' : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
+  pp.title = sandbox ? `PayPal REST Invoicing v2 at ${s.modes.paypal_endpoint}, polled. Sandbox money is not real.` : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
   $('poll-note').textContent = sandbox ? 'polled from the PayPal sandbox Invoicing API' : 'polled from Invoicing API (mock)';
   const demoSummary = document.querySelector('details.demo > summary');
-  if (demoSummary) demoSummary.textContent = sandbox ? 'Demo controls — real PayPal SANDBOX API calls' : 'Demo controls — simulate PayPal activity (MOCK only)';
+  if (demoSummary) demoSummary.textContent = !sandbox ? 'Demo controls — simulate PayPal activity (MOCK only)' : realSandbox ? 'Demo controls — real PayPal SANDBOX API calls' : 'Demo controls — sandbox API calls to the local stub';
   const payerBtn = document.querySelector<HTMLButtonElement>('button[data-sim="payer_pays"]');
   if (payerBtn) { payerBtn.disabled = sandbox; payerBtn.title = sandbox ? 'In the sandbox a PayPal payment comes from a sandbox buyer opening the invoice link in a browser.' : ''; }
   $('clock').textContent = `Demo today: ${pretty(s.today)} 2026`;

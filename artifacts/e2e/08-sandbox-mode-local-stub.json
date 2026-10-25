@@ -1,0 +1,67 @@
+{
+  "written_by": "test",
+  "at": "2026-10-25T23:38:44.887Z",
+  "paypal_backend": "LOCAL STUB http://127.0.0.1:56724 (test/unit/helpers/paypalStub.ts); NOT api-m.sandbox.paypal.com",
+  "seeded": [
+    [
+      "INV-1",
+      "PAID",
+      "created>sent>payment recorded"
+    ],
+    [
+      "INV-2",
+      "SENT",
+      "created>sent"
+    ],
+    [
+      "INV-3",
+      "DRAFT",
+      "created"
+    ],
+    [
+      "INV-4",
+      "PAID",
+      "created>sent>payment recorded"
+    ],
+    [
+      "INV-5",
+      "SENT",
+      "created>sent"
+    ]
+  ],
+  "badge": {
+    "text": "PayPal: SANDBOX API · local stub",
+    "cls": "pill sandbox",
+    "title": "PayPal REST Invoicing v2 at http://127.0.0.1:56724, polled. Sandbox money is not real."
+  },
+  "stub_requests": [
+    "POST /v1/oauth2/token",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0001/send",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0001",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0001/payments",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0001",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0003/send",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0003",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0004",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0005/send",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0005",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0005/payments",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0005",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0007/send",
+    "GET /v2/invoicing/invoices/INV2-STUB-0000-0000-0007",
+    "POST /v2/invoicing/search-invoices",
+    "POST /v2/invoicing/invoices/INV2-STUB-0000-0000-0003/payments",
+    "POST /v2/invoicing/search-invoices"
+  ],
+  "screenshot": "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/e2e/08-sandbox-mode-local-stub.png"
+}

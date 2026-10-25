@@ -19,6 +19,8 @@ export type TrancheOptions = {
   autoWatch?: boolean;
   /** Defaults to the deterministic mock. `TRANCHE_PAYPAL=sandbox` passes a SandboxInvoicingClient. */
   invoicing?: InvoicingClient;
+  /** Real calendar date (tests inject one); sandbox demo controls never send a date later than this. */
+  realToday?: () => string;
 };
 
 type EngineDates = Record<string, { start: string; end: string }>;
@@ -150,7 +152,7 @@ export async function createTranche(opts: TrancheOptions) {
   function snapshot() {
     return {
       ...board.snapshot(host.reminders),
-      modes: { paypal: invoicing.mode, agent: agent.info },
+      modes: { paypal: invoicing.mode, paypal_endpoint: invoicing.baseUrl ?? null, agent: agent.info },
       confirmations: broker.list(),
       audit: audit.entries,
       events: watcher.history,
@@ -236,7 +238,7 @@ export async function createTranche(opts: TrancheOptions) {
         let result: unknown;
         const sandbox = invoicing.mode === 'sandbox';
         // The real sandbox may refuse a payment/refund date in the future, so the demo clock is clamped to the real date there.
-        const realToday = new Date().toISOString().slice(0, 10);
+        const realToday = opts.realToday ? opts.realToday() : new Date().toISOString().slice(0, 10);
         const actionDate = sandbox && realToday < today ? realToday : today;
         if (action === 'payer_pays') {
           // A real PayPal payment needs a sandbox buyer in a browser; only the mock can simulate it.
