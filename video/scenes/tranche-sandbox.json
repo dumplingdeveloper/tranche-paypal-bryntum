@@ -1,0 +1,264 @@
+{
+  "projectName": "Tranche",
+  "intro": {
+    "eyebrow": "PayPal AI Hackathon · demo",
+    "title": "Tranche",
+    "sub": "For freelancers and small agencies paid in instalments: a late PayPal payment shouldn't mean unpaid work or a missed deadline.",
+    "note": "Recorded against the real PayPal sandbox API (PayPal's public default sandbox credentials). Sandbox money is not real."
+  },
+  "outro": {
+    "eyebrow": "Tranche · MIT licence",
+    "title": "Thanks for watching",
+    "sub": "npm install && npm start — then open the board on port 4317.",
+    "note": "Mock PayPal by default; TRANCHE_PAYPAL=sandbox for the real PayPal sandbox (setup in the README). Payments in this video were recorded through the Invoicing API, not paid by a buyer in a browser. Bryntum Gantt and SchedulerPro trial, watermark left visible. Repository link: on the Devpost page."
+  },
+  "subtitleBandHeight": 140,
+  "maxSilenceMs": 1000,
+  "clipGapMs": 250,
+  "tailMs": 1200,
+  "steps": [
+    {
+      "action": "goto",
+      "url": "/",
+      "waitUntil": "load"
+    },
+    {
+      "action": "waitFor",
+      "selector": "#gantt .b-gantt-task-wrap[data-task-id=acme-build]",
+      "timeout": 20000
+    },
+    {
+      "action": "pause",
+      "ms": 800
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Tranche is for freelancers and small agencies paid in instalments. When a client pays late, they keep working unpaid, or they miss their own deadlines."
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Tranche makes every PayPal invoice a milestone on a Bryntum Gantt, and each phase waits for the payment before it."
+    },
+    {
+      "action": "snapshot",
+      "name": "01-overdue-blocks-phase"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "On the demo clock, Acme's second PayPal invoice is nine days overdue, so the phase it unlocks is blocked, in red. Below is Bryntum Scheduler Pro on the same project."
+    },
+    {
+      "action": "say",
+      "voice": "OWNER",
+      "text": "Invoice two for Acme is nine days overdue. What does that do to the plan? Draft a reminder too."
+    },
+    {
+      "action": "type",
+      "selector": "#ask-input",
+      "text": "Invoice INV-2 for Acme is 9 days overdue. What does that do to the plan? Draft a reminder too.",
+      "delayMs": 12
+    },
+    {
+      "action": "click",
+      "selector": "#ask-form button[type=submit]"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "The agent runs on the GitHub Copilot SDK. Its tools can read the board and file requests, never change it, and our scheduler, not the model, computes every date."
+    },
+    {
+      "action": "waitFor",
+      "selector": ".conf.pending:has-text(\"Schedule change\")",
+      "timeout": 180000
+    },
+    {
+      "action": "waitFor",
+      "selector": ".conf.pending:has-text(\"PayPal reminder\")",
+      "timeout": 180000
+    },
+    {
+      "action": "waitFor",
+      "selector": "#agent-status",
+      "state": "hidden",
+      "timeout": 180000
+    },
+    {
+      "action": "pause",
+      "ms": 500
+    },
+    {
+      "action": "snapshot",
+      "name": "02-agent-preview-and-approvals"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "The dashed ghost bars are that preview: the phases behind invoice two slide, and the banner shows how far Acme's delivery slips. Nothing has moved yet."
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "The agent filed two requests: the new dates, and a PayPal reminder with a friendly note. Each is bound to its preview by a payload hash, and only the owner can approve."
+    },
+    {
+      "action": "click",
+      "selector": ".conf.pending:has-text(\"Schedule change\") button[data-action=approve]"
+    },
+    {
+      "action": "waitFor",
+      "selector": "#undo:not([disabled])",
+      "timeout": 20000
+    },
+    {
+      "action": "pause",
+      "ms": 700
+    },
+    {
+      "action": "snapshot",
+      "name": "03-applied-in-bryntum-engine"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Apply runs inside the Bryntum engine as one transaction. The browser reports the engine's dates back, and the server checks every one."
+    },
+    {
+      "action": "click",
+      "selector": "#undo"
+    },
+    {
+      "action": "waitFor",
+      "selector": "#undo[disabled]",
+      "timeout": 20000
+    },
+    {
+      "action": "waitFor",
+      "selector": ".conf.undone:has-text(\"Schedule change\")",
+      "timeout": 20000
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Changed my mind? Undo reverts it through Bryntum's state tracking manager, and the card now says undone."
+    },
+    {
+      "action": "click",
+      "selector": "details.demo > summary"
+    },
+    {
+      "action": "reveal",
+      "selector": "[data-sim=record_external_payment]",
+      "block": "center",
+      "waitMs": 400
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Now the client pays. A PayPal button payment needs a sandbox buyer in a browser, so we record a bank transfer through the Invoicing API."
+    },
+    {
+      "action": "click",
+      "selector": "[data-sim=record_external_payment]"
+    },
+    {
+      "action": "waitFor",
+      "selector": ".conf.stale:has-text(\"PayPal reminder\")",
+      "timeout": 90000
+    },
+    {
+      "action": "reveal",
+      "selector": "#transcript",
+      "block": "start",
+      "waitMs": 300
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "The watcher's next poll of PayPal sees the invoice marked as paid. That event wakes the agent by itself."
+    },
+    {
+      "action": "waitFor",
+      "selector": ".conf.pending:has-text(\"Schedule change\")",
+      "timeout": 180000
+    },
+    {
+      "action": "waitFor",
+      "selector": "#agent-status",
+      "state": "hidden",
+      "timeout": 180000
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "It proposes moving the plan to the real payment date. The dashed bars show the new dates."
+    },
+    {
+      "action": "reveal",
+      "selector": ".conf.stale:has-text(\"PayPal reminder\")",
+      "block": "center",
+      "waitMs": 500
+    },
+    {
+      "action": "snapshot",
+      "name": "04-paid-reminder-stale-release-preview"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Meanwhile, the reminder I never sent has turned stale. It can't be approved any more, so nobody nags a client who just paid."
+    },
+    {
+      "action": "reveal",
+      "selector": ".conf.pending:has-text(\"Schedule change\")",
+      "block": "center",
+      "waitMs": 400
+    },
+    {
+      "action": "click",
+      "selector": ".conf.pending:has-text(\"Schedule change\") button[data-action=approve]"
+    },
+    {
+      "action": "waitFor",
+      "selector": "#undo:not([disabled])",
+      "timeout": 20000
+    },
+    {
+      "action": "pause",
+      "ms": 700
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "One click, and the build phase starts on the day the money arrived."
+    },
+    {
+      "action": "reveal",
+      "selector": "#audit",
+      "block": "end",
+      "waitMs": 600
+    },
+    {
+      "action": "snapshot",
+      "name": "05-release-applied-audit-log"
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Every request, approval, apply, undo and PayPal event lands in the audit log."
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "The top bar says what is running: the real PayPal sandbox API, and a live model through the GitHub Copilot SDK. Judges can also bring their own key, or use the labelled scripted agent."
+    },
+    {
+      "action": "say",
+      "voice": "NARRATOR",
+      "text": "Tranche: PayPal payments that move the plan, with a human in the loop."
+    }
+  ]
+}
