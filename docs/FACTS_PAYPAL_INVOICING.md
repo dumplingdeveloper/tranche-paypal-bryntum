@@ -1,4 +1,4 @@
-# PayPal Invoicing facts for tranches (verified 2026-10-17; sandbox-client section 2026-10-25)
+# PayPal Invoicing facts for tranches (verified 2026-10-17; sandbox-client section 2026-10-25; real-sandbox answers 2026-10-26)
 
 Spec files: `/Users/shiyx/.copilot/session-state/a5f98933-0ac2-4012-8b8b-91ed009d4889/files/paypal-rest-api-specifications/openapi/`
 (`invoicing_v2.json` = **INV**, `notifications_webhooks_v1.json` = **WH**). Line numbers refer to those files.
@@ -45,19 +45,34 @@ Tranche mapping used in `src/domain/schedule.ts`: paid = `PAID | MARKED_AS_PAID 
 
 ## What can be automated without a browser payer (sandbox)
 - Create → send → remind → cancel: merchant-side API calls only.
-- "Payment arrives": `POST …/payments` (record external payment) → `PAID`/`PARTIALLY_PAID` per INV:745. Whether the resulting status is `PAID` or `MARKED_AS_PAID` for an external payment is UNVERIFIED (both exist in the enum).
+- "Payment arrives": `POST …/payments` (record external payment) → `PAID`/`PARTIALLY_PAID` per INV:745. **Real sandbox 2026-10-26: a full external payment gives `MARKED_AS_PAID`** (§9).
 - "Refund": `POST …/refunds` (record external refund) → `REFUNDED`/`PARTIALLY_REFUNDED` per INV:1008.
 - A *real* PayPal-wallet payment of an invoice requires the payer to log in to the PayPal-hosted invoice page with a sandbox personal account (browser). Not needed for the demo.
 
 ## Credentials status
-`~/.config/tillwise/paypal-sandbox.env` is **absent** (checked 2026-10-17 and again 2026-10-25). The default is the
-deterministic `MockInvoicingClient`. The sandbox client below (M4-prep, 2026-10-25) was **written fresh** for Tranche
-(nothing copied from entry 1) and is enabled only with `TRANCHE_PAYPAL=sandbox` **and** credentials.
+- 2026-10-17 and 2026-10-25: `~/.config/tillwise/paypal-sandbox.env` absent; mock only.
+- **2026-10-26: the file holds PayPal's default PUBLIC sandbox credentials** (written by the user; the same values
+  that `npm run sandbox:use-public-creds` fetches — compared programmatically, not printed). Source:
+  https://github.com/paypal/postman-collections, `Collections/PayPal_Public_APIs.json`, collection variables
+  `client_id` / `client_secret`. The collection's own variable `PLEASE NOTE -->` says, verbatim: "PayPal Public
+  Collection comes with following default public set of credentials stored at the Collection level. You may choose
+  to override these values via environment level variables. You may bring your own credentials from PayPal
+  Developer Dashboard there."
+- Their token response carries `app_id` **APP-80W284485P519543T** (`PUBLIC_DEFAULT_APP_ID` in
+  `src/paypal/sandboxClient.ts`; the UI and CLIs say "PayPal public default credentials (shared)" when they see it).
+  It is a **shared** app: everything created with it is visible to other users of these credentials, so every
+  Tranche set uses fake names, `@example.com` recipients and its own `TR-XXXXX-` invoice-number prefix.
+- The values are never printed, logged or committed. A scan of every tracked/untracked file for the id, the secret
+  and their Basic base64 found 0 hits before committing.
+- The default is still the deterministic `MockInvoicingClient`; `TRANCHE_PAYPAL=sandbox` switches to the client below.
+  It was **written fresh** for Tranche (nothing copied from entry 1).
 
 ## Sandbox client (M4-prep, `src/paypal/sandboxClient.ts`) — sources for every request shape
-Status: unit-tested against a local stub server shaped from the spec (`test/unit/helpers/paypalStub.ts`) and through
-the real UI against that stub (`test/e2e/sandbox.e2e.ts`). **It has never been run against api-m.sandbox.paypal.com**
-(no credentials). No PayPal network call was made while building it.
+Status: unit-tested against a local stub server (`test/unit/helpers/paypalStub.ts`, now aligned with the real answers
+in §9) and, **since 2026-10-26, run against api-m.sandbox.paypal.com**: `sandbox:smoke` (5/5), `sandbox:seed`
+(twice, idempotent), the fact probe (§9) and the opt-in real-UI e2e `npm run test:sandbox-live` (1/1). Every request
+is in the call ledger `artifacts/sandbox/paypal-calls.jsonl` (method, path, status, duration, PayPal-Debug-Id; no
+headers or bodies).
 
 ### 1. Host and auth
 | What | Source |
@@ -89,8 +104,10 @@ Draft body fields: `detail.invoice_number` (max 25, INV:3795–3798), `detail.re
 `term_type` or `due_date`", INV:3806), `primary_recipients[].billing_info.business_name/email_address`
 (INV:2849, INV:2979), `items[].name/quantity/unit_amount` (INV:6062).
 
-Every Tranche invoice number is prefixed `TRANCHE-` (configurable with `TRANCHE_INVOICE_PREFIX`), and every search
-result without that prefix is dropped, so Tranche never reads or changes other invoices in a shared sandbox account.
+Every Tranche invoice number carries a prefix: `npm run sandbox:seed` generates `TR-XXXXX-` and saves it in
+`.tranche/sandbox-state.json` (git-ignored; `TRANCHE_INVOICE_PREFIX` overrides, fallback `TRANCHE-`). Because the
+real `search_data.invoice_number` is a prefix match (§9), every search sends the prefix, so Tranche never pages
+through, reads or changes other people's invoices in a shared sandbox app; results without the prefix are dropped too.
 
 ### 3. Status mapping (`toDomainStatus`, `toDomainInvoice`)
 The domain keeps PayPal's own enum (INV:3868–3958), so nothing is lost. `src/domain/schedule.ts:5` treats
@@ -130,35 +147,65 @@ before any request. A unit test runs all three as child processes with `HOME` se
 preloaded spy on `fetch` and `net.Socket#connect` (with a positive control showing the spy does record a request);
 it asserts exit 2 and an empty spy log.
 There is no local webhook receiver (see "Webhooks vs polling"), so the watcher polls `search-invoices` every 30 s
-(`TRANCHE_POLL_MS`, minimum 5 s). The header badge reads `PayPal: SANDBOX`; when the base URL is the loopback stub
-it reads `PayPal: SANDBOX API · local stub`.
+(`TRANCHE_POLL_MS`; minimum **30 s against the real sandbox**, 5 s only for the loopback stub). A poll costs one
+search; a paid/refunded invoice costs one extra GET the first time its status changes (§9, search shape). Demo
+controls trigger one immediate poll. The header badge reads **`PayPal: REAL SANDBOX API`** against
+api-m.sandbox.paypal.com (its tooltip and the PayPal-events header show the app id or "PayPal public default
+credentials" when `app_id` is APP-80W284485P519543T, plus the invoice prefix); against the loopback stub it reads
+`PayPal: SANDBOX API · local stub`.
 
 ### 6. Demo states in a real sandbox (`npm run sandbox:seed`)
 | Demo state | How the seed reaches it | Evidence / status |
 |---|---|---|
 | INV-3 `DRAFT` | create only | INV:100 "Creates a draft invoice." |
-| INV-2, INV-5 `SENT` | create, then `send` with `send_to_recipient: false, send_to_invoicer: false` (share-link send, no email to the fictional `.example` recipients) | INV:340 "To send the invoice through a share link and not through PayPal, set the `send_to_recipient` parameter to `false`". Resulting status (SENT vs UNPAID) is **unverified**; both are treated as "money expected". |
-| INV-1, INV-4 `PAID` | create, send, then `POST …/payments` (method `BANK_TRANSFER`, mock payment date) | INV:745 "If no payment is due, the invoice is marked as `PAID`." Whether the real sandbox reports `PAID` or `MARKED_AS_PAID` is **unverified**; both count as paid. No sandbox buyer or browser is needed. |
+| INV-2, INV-5 sent | create, then `send` with `send_to_recipient: false, send_to_invoicer: false` (share-link send, no email to the fictional `@example.com` recipients) | INV:340 "To send the invoice through a share link and not through PayPal, set the `send_to_recipient` parameter to `false`". **Real sandbox: status `UNPAID`** (§9). |
+| INV-1, INV-4 paid | create, send, then `POST …/payments` (method `BANK_TRANSFER`, the mock payment date) | **Real sandbox: status `MARKED_AS_PAID`**, transaction `type: EXTERNAL` (§9). Counts as paid. No sandbox buyer or browser is needed. |
 | INV-2 "9 days overdue" | due date 2026-10-25 (from the mock data); overdue is computed against the **demo clock** `TRANCHE_TODAY` (default 2026-11-03), shown as the "Demo today" pill | PayPal has no OVERDUE status (enum above), so overdue is always our computation. |
 | Issue dates in the future (INV-3 2026-11-08) | clamped to the real date before create | INV:340: a future issue date makes `/send` *schedule* the invoice instead of sending it. |
-| Past `due_date` | sent as-is; **if PayPal rejects it** (a 4xx whose issue/field mentions the due date), the seed recreates the draft as `DUE_ON_RECEIPT` with `reference: "tranche-demo/v1 due=2026-10-25"`, and Tranche reads the planned due date from that tag | **Unverified.** The spec does not say whether a past `due_date` is accepted. A web search returned an AI-written answer claiming it is rejected, but its only cited source (a Stack Overflow question about payment terms) could not be opened (HTTP 403), so I do not rely on it. The fallback path is unit-tested with a stub knob. |
+| Past `due_date` | sent as-is | **Real sandbox: accepted** — create with `due_date` 2026-10-17 on 2026-10-26 returned `status: DRAFT`, `due_date: 2026-10-17`, `term_type: DUE_ON_DATE_SPECIFIED` (§9). The `DUE_ON_RECEIPT` + `due=` tag fallback stays in the code (unit-tested with a stub knob) but was not needed. |
+| INV-2 paid on 3 Nov (demo) | "Record bank transfer" → `POST …/payments` dated on the demo clock (2026-11-03, after the real date) | **Real sandbox: a future `payment_date` is accepted** (§9). |
 
 Idempotency: each invoice is first looked up by its prefixed `invoice_number` and only created if missing; existing
-invoices only move forward (DRAFT → sent → paid). A sandbox invoice that is "ahead" of the demo (e.g. INV-2 paid
-during a rehearsal) is reported as `DRIFT` and left alone; set `TRANCHE_INVOICE_PREFIX=TR2-` to seed a fresh set.
-Demo controls in sandbox mode never send a payment/refund date later than the real date.
+invoices only move forward (DRAFT → sent → paid). One prefix-scoped search covers all five. A sandbox invoice that is
+"ahead" of the demo (e.g. INV-2 paid during a rehearsal) is reported as `DRIFT` and left alone; run
+`npm run sandbox:seed -- --fresh` for a new set with a new prefix. Real run: first seed 20 requests, rerun 9 requests
+with every row `found` (`artifacts/sandbox/seed-2026-10-26*.txt`). Payments from the demo controls use the demo date
+(verified accepted); refunds are still clamped to the real date (a future refund date is unverified).
 
 ### 7. Not possible without a browser
 "Client pays via PayPal" needs a sandbox **buyer** to open the invoice link and pay in a browser. In sandbox mode
-that demo button is disabled and the API answers `409 NEEDS_BROWSER_PAYER`; "Record bank transfer" (`/payments`)
-is the API-only path.
+that demo button is disabled, the API answers `409 NEEDS_BROWSER_PAYER`, and a visible note under the demo controls
+says: "A real PayPal payment needs a sandbox buyer paying the invoice link in a browser, so this demo records the
+payment through the Invoicing API ("Record bank transfer")." Tranche itself never logs in as a buyer.
 
-### 8. Unverified (needs a real sandbox run)
-- Every request above against the real sandbox (only the stub has been exercised).
-- Whether a past `due_date` is accepted at create time.
-- Status after `send` with `send_to_recipient: false` (SENT vs UNPAID), and after a recorded external payment
-  (PAID vs MARKED_AS_PAID).
-- Whether `search_data.invoice_number` is an exact or partial match (the client filters exactly, client-side).
-- Whether PayPal rejects a duplicate `invoice_number` (the seed avoids duplicates by searching first).
-- Whether `Prefer: return=representation` returns the full invoice in the sandbox (the link fallback is tested).
-- A future `payment_date` / `refund_date` being rejected (the app clamps to the real date anyway).
+### 8. Still unverified
+- A **refund** dated in the future (`/refunds` with a date after the real date); the app clamps refunds to the real date.
+- Status after `send` **with** `send_to_recipient: true` (SENT?). Tranche only uses share-link sends.
+- `PARTIALLY_PAID` / `PAYMENT_PENDING` produced by the real sandbox (only via the stub).
+- A real PayPal-wallet payment by a sandbox buyer (needs a browser; not done).
+- Webhooks (not used; polling only).
+- Whether the public default credentials stay available and unchanged (PayPal can rotate them at any time).
+
+### 9. Real-sandbox answers (2026-10-26, api-m.sandbox.paypal.com, app APP-80W284485P519543T)
+Evidence: `artifacts/sandbox/probe-2026-10-26-9112L.json` (`npm run sandbox:probe`, 13 requests, prefix `TRP-9112L-`,
+fake recipient `probe@example.com`), `artifacts/sandbox/search-shape-2026-10-26.json`, the ledger
+`artifacts/sandbox/paypal-calls.jsonl`, and the live e2e evidence `artifacts/sandbox/sandbox-live-flow.json`.
+
+| Question | Real answer (quoted from the evidence) |
+|---|---|
+| Past `due_date` accepted at create? | **Yes.** Sent `2026-10-17` on 2026-10-26 → `"status": "DRAFT", "returned_due_date": "2026-10-17", "returned_term_type": "DUE_ON_DATE_SPECIFIED", "representation_returned": true` |
+| `Prefer: return=representation` returns the invoice? | **Yes** (`representation_returned: true` above). |
+| Duplicate `invoice_number`? | **Rejected:** `422 DUPLICATE_INVOICE_NUMBER [/detail/invoice_number]: Invoice number is duplicate. (PayPal-Debug-Id f149106fa06b9)` |
+| `search_data.invoice_number` exact or partial? | **Prefix (starts-with):** full number → `total_items: 1`; prefix only (`TRP-9112L-`) → `total_items: 1`; a middle substring → `total_items: 0`. |
+| Status after share-link `send` (`send_to_recipient: false`)? | **`UNPAID`** (`"status after send": {"status": "UNPAID"}`) |
+| `remind` on that invoice? | Accepted (`ok`). |
+| Future `payment_date` on `/payments`? | **Accepted:** dated 2026-11-03 on 2026-10-26 → `"payment_id": "EXTR-8FG253960X465120G"` |
+| Status after recording a full external payment? | **`MARKED_AS_PAID`**, transaction `{"payment_date": "2026-11-03", "method": "BANK_TRANSFER", "type": "EXTERNAL"}` |
+| Cancel a paid invoice? | **Rejected:** `422 CANNOT_CANCEL_PAID_INVOICE [invoiceId]: Cannot cancel a paid or partially paid invoice. (PayPal-Debug-Id f893957abbd7d)` — paid demo invoices therefore stay in the shared app. |
+| What does a search item contain? | Keys `amount, detail, due_amount, id, links, payments, primary_recipients, status, unilateral`; for a `MARKED_AS_PAID` invoice `payments` has **only `paid_amount`** — no `transactions`, so no payment date (`search-shape-2026-10-26.json`). Tranche therefore GETs a paid/refunded invoice once per status change (cached). |
+| Transient errors? | Seen once: `GET /v2/invoicing/invoices/INV2-XRFP-…` → **503** at 13:09:47.955Z, retried by the client → 200 at 13:09:49.318Z (ledger). |
+| DELETE a draft / cancel an unpaid invoice? | `DELETE` → 204; `POST …/cancel` (`send_to_recipient: false`) → 204 (ledger, live-e2e cleanup). |
+
+Fixes made because of these answers: prefix-scoped search; `UNPAID`/`MARKED_AS_PAID` in the stub and tests; the stub's
+search now strips `transactions` like the real API; a detail GET for paid/refunded invoices; demo payments dated on the
+demo clock; per-set prefixes (duplicates are rejected, so a rerun can never create a second `INV-2`).

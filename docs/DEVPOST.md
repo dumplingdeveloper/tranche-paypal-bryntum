@@ -6,7 +6,7 @@ submission time (repo URL, video URL). Every claim below points at a file, a tes
 ## Checklist against the official rules (docs quoted in hackathon_paypal/submission/RULES_EXCERPTS.md)
 | Rule (quoted) | How Tranche meets it | Status |
 |---|---|---|
-| "integrates the PayPal developer platform (using the free sandbox environment) along with an AI tool" | PayPal Invoicing tranches drive the schedule; AI agent on the GitHub Copilot SDK | Mock PayPal by default. M4-prep: a REST Invoicing v2 **sandbox client** (`TRANCHE_PAYPAL=sandbox`, `npm run sandbox:seed` / `sandbox:smoke`) is built and tested against a local stub, but has **not yet been run against the real sandbox** (no credentials) → run it once credentials exist, or disclose clearly |
+| "integrates the PayPal developer platform (using the free sandbox environment) along with an AI tool" | PayPal Invoicing tranches drive the schedule; AI agent on the GitHub Copilot SDK | Mock PayPal by default (so judges need no account). `TRANCHE_PAYPAL=sandbox` uses REST Invoicing v2 on **api-m.sandbox.paypal.com**; run on 2026-10-26 with PayPal's default *public* sandbox credentials: smoke 5/5, seed (idempotent rerun), and the full demo through the real UI (`npm run test:sandbox-live` 1/1, screenshots `artifacts/screenshots/sandbox/`). Not yet run with a judge's own app (same code path) |
 | "PayPal integration is central to the project" | Invoice status is the only thing that blocks or releases phases (`src/paypal/watcher.ts`, `src/domain/schedule.ts`) | ok |
 | "Include a text description that should explain the features and functionality" | sections below | draft |
 | "judges must be able to actually run or interact with a working build" … "clear, complete setup and run instructions" | README "Quick start for judges": `npm install && npm start`, no keys; verified on a fresh `git clone` (docs/BUILD_LOG.md "Clean clone") | ok |
@@ -37,7 +37,7 @@ events and automatically moves or flags milestones".
 - **PayPal tranches as Gantt dependencies.** Each PayPal invoice is a milestone on a Bryntum Gantt; the next phase
   depends on it (finish-to-start). Milestones are coloured by PayPal status (paid, sent, overdue, draft, refunded,
   cancelled), and a phase whose tranche is unpaid is drawn as blocked.
-- **Payment watcher.** Polls PayPal Invoicing (the mock by default; `search-invoices` every 30 s in sandbox mode) and turns changes into `INVOICING.INVOICE.*`-style
+- **Payment watcher.** Polls PayPal Invoicing (the mock by default; the real sandbox's `search-invoices` every 30 s in sandbox mode) and turns changes into `INVOICING.INVOICE.*`-style
   events: overdue, paid, refunded, cancelled.
 - **AI agent that re-plans, but never computes dates.** The agent (GitHub Copilot SDK; Copilot login, BYOK or
   Ollama) reads the board and calls `schedule_shift_preview` / `schedule_release_preview`. Our scheduler computes
@@ -51,7 +51,10 @@ events and automatically moves or flags milestones".
   each change the browser reports the engine's dates back and the server checks them against its own scheduler.
 - **Team capacity.** A Bryntum SchedulerPro view shares the Gantt's project, so people's bookings move with the
   plan and double bookings are outlined.
-- **PayPal reminder.** The owner can approve a PayPal invoice reminder drafted by the agent (a mock call by default; `POST …/remind` in sandbox mode, not yet run against the real sandbox).
+- **PayPal reminder.** The owner can approve a PayPal invoice reminder drafted by the agent (a mock call by default; `POST …/remind` in sandbox mode — the real sandbox accepted `remind` in our probe, but the in-app approve → remind path has only run against the mock and the stub).
+- **Real PayPal sandbox mode.** The badge says **PayPal: REAL SANDBOX API**; "Record bank transfer" records a real
+  external payment in PayPal (`MARKED_AS_PAID`), and the next poll makes the plan react. A PayPal-button payment
+  needs a sandbox buyer in a browser, which the app says on screen; we use record-payment instead.
 - **Audit log** of every request, approval, rejection, apply, undo and stale sweep.
 
 ## How we built it
@@ -63,8 +66,12 @@ events and automatically moves or flags milestones".
   behind an `InvoicingClient` interface with a deterministic mock (default) and a sandbox client written fresh
   for Tranche (`src/paypal/sandboxClient.ts`: OAuth2 client_credentials with a cached token, create / send / remind
   / record payment / refund / cancel / get / list / search, retries on 429 and on 5xx for reads, PayPal-Debug-Id in
-  errors, secrets masked). It is tested against a local stub of the API and through the UI in sandbox mode against
-  that stub; it has **not yet been run against api-m.sandbox.paypal.com**. An optional transaction cross-check written with
+  errors, secrets masked). It is tested against a local stub of the API and, since 2026-10-26, **run against
+  api-m.sandbox.paypal.com** with PayPal's default public sandbox credentials (published in PayPal's own Postman
+  collection, github.com/paypal/postman-collections; `npm run sandbox:use-public-creds` fetches them without
+  printing them). Real answers changed the code: search is a prefix match, a share-link send gives `UNPAID`, a
+  recorded payment gives `MARKED_AS_PAID`, and search results carry no payment dates, so paid invoices are read
+  once with GET (docs/FACTS_PAYPAL_INVOICING.md §9). An optional transaction cross-check written with
   the **PayPal Server SDK 2.5.0** (APIMatic-generated) lives in `src/paypal/sdkPaymentCheck.ts`.
 - **APIMatic**: while writing that SDK module we used the APIMatic Context Plugin skills for the PayPal Server SDK
   (client initialization, authentication, calling endpoints, error handling, configuration/resilience, testing);
@@ -75,10 +82,11 @@ events and automatically moves or flags milestones".
 - **AI**: GitHub Copilot SDK 1.0.15 with 6 custom tools and `availableTools` restricted to them; BYOK provider
   config for OpenAI / Anthropic / Azure / Ollama (docs/FACTS_COPILOT_BYOK.md).
 - **Server**: Node.js 22 + TypeScript (type stripping, no build step), plain `node:http`.
-- **Tests**: 57 unit tests (22 of them for the sandbox client, seed and smoke against a local stub, including a
+- **Tests**: 64 unit tests (sandbox client, seed, smoke and the credentials helper against a local stub, including a
   no-credentials/no-network check), 9 Playwright end-to-end tests through the real UI that assert Bryntum engine dates,
-  broker state, audit entries and rendered geometry; a BYOK wiring test against a local stub; and a live test with
-  a real model through the real UI (docs/BUILD_LOG.md "Live runs").
+  broker state, audit entries and rendered geometry; an opt-in end-to-end test against the **real PayPal sandbox**
+  (`npm run test:sandbox-live`); a BYOK wiring test against a local stub; and a live test with a real model through
+  the real UI (docs/BUILD_LOG.md "Live runs").
 
 ## Challenges we ran into
 - Time zones and DST: Irish summer time ended during the build; Bryntum dates are anchored at local noon, and the
@@ -91,6 +99,9 @@ events and automatically moves or flags milestones".
 ## Accomplishments that we're proud of
 - A real model (gpt-6-luna via Copilot) drove the full flow through the UI: it chose the tools and arguments, the
   owner applied, the client paid, and the agent proposed the release (evidence `artifacts/live/`).
+- The whole demo also ran against the real PayPal sandbox through the UI: overdue → preview → apply → undo →
+  payment recorded in PayPal → stale reminder → release, with PayPal's own GET confirming `MARKED_AS_PAID`
+  (`artifacts/sandbox/sandbox-live-flow.json`).
 - Every screenshot and evidence file in `artifacts/` is written by the tests themselves.
 
 ## What we learned
@@ -98,8 +109,8 @@ events and automatically moves or flags milestones".
 that depends on this payment" a one-line constraint change.
 
 ## What's next
-- M4: run the sandbox client against a real sandbox account (`npm run sandbox:smoke`, `npm run sandbox:seed`,
-  `TRANCHE_PAYPAL=sandbox npm start`). The code is in place; only credentials are missing.
+- Run once with our own sandbox app (option B in the README) and a sandbox buyer paying through the PayPal invoice
+  page in a browser.
 - Calendar view of client deadlines; webhook receiver for hosted deployments.
 
 ## Built with
@@ -112,10 +123,13 @@ anthropic, ollama, typescript, node.js, playwright
 - Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the
   recorded live take; see docs/VIDEO_RENDER.md "Devpost media")
 - Run: `npm install && npm start` → http://127.0.0.1:4317/ (mock PayPal, no keys)
+- Real PayPal sandbox: `npm run sandbox:use-public-creds && npm run sandbox:seed && TRANCHE_PAYPAL=sandbox npm start`
+  (PayPal's public default credentials, a shared app), or your own sandbox app (README "Use the real PayPal sandbox")
 
 ## Testing instructions for judges
 See README "Quick start for judges". No credentials are needed: PayPal is mocked by default, and without a Copilot
-login or BYOK key the clearly labelled scripted agent runs the same flow. To use your own model:
+login or BYOK key the clearly labelled scripted agent runs the same flow. For the real PayPal sandbox, the README gives
+two options: PayPal's public default sandbox credentials (`npm run sandbox:use-public-creds`) or your own sandbox app. To use your own model:
 `TRANCHE_LLM_PROVIDER=openai TRANCHE_LLM_API_KEY=… TRANCHE_LLM_MODEL=gpt-4.1 npm start`.
 
 ## New vs existing (honest account)
@@ -168,9 +182,11 @@ fresh"; the M4-prep sandbox client was also written fresh, not adapted from entr
   watermark is asserted present on both views.
 
 ## Known limitations (also in README)
-- PayPal is a sandbox-shaped mock by default. The sandbox client exists but has not yet been run against the real
-  sandbox (no credentials); whether PayPal accepts a past due date, and which status a recorded payment yields
-  (PAID vs MARKED_AS_PAID), are unverified (docs/FACTS_PAYPAL_INVOICING.md §8).
+- PayPal is a sandbox-shaped mock by default. Sandbox mode has run against the real sandbox only with PayPal's
+  shared public default credentials, not with our own app; no browser buyer payment was made (we record payments
+  through the API); a future-dated refund, `PARTIALLY_PAID` and the in-app remind path are unverified against the
+  real sandbox (docs/FACTS_PAYPAL_INVOICING.md §8). Paid demo invoices cannot be cancelled, so they stay in the
+  shared app.
 - Bryntum runs as the public trial with its watermark; licence questions for judging are open
   (docs/FACTS_BRYNTUM_LICENCE.md).
 - BYOK verified only against a local stub; Ollama config unit-tested only in this build.

@@ -16,7 +16,7 @@ const GALLERY = [
   { still: '01-overdue-blocks-phase', title: 'An overdue PayPal tranche blocks the next phase',
     detail: 'Bryntum Gantt: each phase depends on a PayPal invoice milestone. INV-2 is 9 days overdue, so Build is blocked (red).' },
   { still: '02-agent-preview-and-approvals', title: 'The agent proposes; you approve',
-    detail: 'The AI agent only calls read-only tools; our scheduler code, not the model, computes the dashed preview dates. Cards carry a payload hash.' },
+    detail: 'The AI agent can read the board and file requests, but cannot change anything. Our scheduler code, not the model, computes the dashed preview dates.' },
   { still: '03-applied-in-bryntum-engine', title: 'Approved changes are applied in the Bryntum engine',
     detail: 'Apply runs in the Bryntum project (commitAsync), checked against the preview, recorded in the audit log, undoable via STM.' },
   { still: '04-paid-reminder-stale-release-preview', title: 'A payment event wakes the agent by itself',
@@ -25,7 +25,11 @@ const GALLERY = [
     detail: 'Release applied after approval. The audit log shows the preview, the approval, and the engine check of every date.' }
 ];
 const THUMB = { still: '02-agent-preview-and-approvals', title: 'Tranche', line: 'Late PayPal payment? The schedule knows.' };
-const FOOTER = 'Real UI screenshot · Tranche · PayPal in mock mode · Bryntum Gantt & SchedulerPro (trial)';
+// MEDIA_PAYPAL=sandbox when the stills were recorded against the real PayPal sandbox (badge "PayPal: REAL SANDBOX API").
+const PAYPAL_NOTE = process.env.MEDIA_PAYPAL === 'sandbox'
+  ? 'PayPal: real sandbox API (public default credentials)'
+  : 'PayPal in mock mode';
+const FOOTER = `Real UI screenshot · Tranche · ${PAYPAL_NOTE} · Bryntum Gantt & SchedulerPro (trial)`;
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const dataUrl = (file) => `data:image/png;base64,${fs.readFileSync(file).toString('base64')}`;

@@ -2,10 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Status: **M1–M3 built** (mock PayPal, Bryntum board, real-model agent). **M4-prep built**: a PayPal sandbox
-client (REST Invoicing v2) behind `TRANCHE_PAYPAL=sandbox`, tested against a local stub only. It has **not yet been
-run against the real PayPal sandbox** (no sandbox credentials yet). See [DESIGN.md](DESIGN.md) and
-[docs/BUILD_LOG.md](docs/BUILD_LOG.md).
+Status: **M1–M3 built** (mock PayPal, Bryntum board, real-model agent). **M4 built and run against the real PayPal
+sandbox** (2026-10-26): REST Invoicing v2 behind `TRANCHE_PAYPAL=sandbox`, exercised with PayPal's default
+*public* sandbox credentials (a shared app) — smoke, seed and a full real-UI flow (`npm run test:sandbox-live`).
+Mock stays the default. See [DESIGN.md](DESIGN.md) and [docs/BUILD_LOG.md](docs/BUILD_LOG.md).
 
 Freelancers and small agencies bill client work in PayPal invoice "tranches". Tranche puts every tranche on a
 Bryntum Gantt as a milestone that the next phase depends on, so a late, failed or refunded PayPal payment visibly
@@ -46,41 +46,65 @@ The Ollama path is unit-tested for its config only in this build; the Phase A sp
 Set `PORT=…` to choose another start port. The tests start their own servers on free ports from 4317 upward.
 
 ### Use the real PayPal sandbox
-> **Honest status:** the sandbox client is written and tested against a local stub of the Invoicing v2 API
-> (`npm test`, `npm run test:e2e`), but it has **not yet been run against api-m.sandbox.paypal.com**. Mock mode
-> (the default) needs none of this.
+> **Status (2026-10-26):** run against `https://api-m.sandbox.paypal.com` with **PayPal's default public sandbox
+> credentials** (option A below): `sandbox:smoke` 5/5, `sandbox:seed` (rerun is idempotent), and the full demo
+> through the real UI (`npm run test:sandbox-live`, 1/1; screenshots in `artifacts/screenshots/sandbox/`). Not yet
+> run with a judge's own sandbox app (option B), though it is the same code path. Mock mode (the default) needs
+> none of this. Real PayPal answers and their evidence: [docs/FACTS_PAYPAL_INVOICING.md](docs/FACTS_PAYPAL_INVOICING.md) §9.
 
-Steps for a judge with their own PayPal developer account:
-1. Follow PayPal's own steps (https://developer.paypal.com/api/rest/, "Get client ID and client secret"):
-   "Select Log in to Dashboard and log in or sign up. Select Apps & Credentials. New accounts come with a Default
-   Application in the REST API apps section. To create a new project, select Create App. Copy the client ID and
-   client secret for your app." Use the sandbox credentials (Tranche only calls the sandbox host).
-2. Put them in the credentials file (or export the same two variables, which override the file):
-   ```bash
-   mkdir -p ~/.config/tillwise
-   printf 'PAYPAL_CLIENT_ID=%s\nPAYPAL_CLIENT_SECRET=%s\n' '<client id>' '<secret>' > ~/.config/tillwise/paypal-sandbox.env
-   chmod 600 ~/.config/tillwise/paypal-sandbox.env
-   ```
-   Tranche never prints, logs or commits these values; errors show `***` instead.
-3. `npm run sandbox:smoke`: gets a token, lists and searches invoices (read-only), creates one draft
-   `TRANCHE-SMOKE-…` and deletes it again. Prints `ok`/`FAIL` per step.
-4. `npm run sandbox:seed`: creates the five demo invoices `TRANCHE-INV-1…5` in your sandbox (idempotent: reruns
-   find them by number instead of duplicating), sends INV-2/INV-5 as share links (no PayPal e-mail), records the
-   INV-1/INV-4 payments as external bank transfers, and prints a table of ids and statuses.
-5. `TRANCHE_PAYPAL=sandbox npm start`: the header badge says **PayPal: SANDBOX**; the app polls
-   `search-invoices` every 30 s (`TRANCHE_POLL_MS`). If the demo invoices are missing it exits and asks you to run
-   the seed.
+**Option A — PayPal's default public sandbox credentials (no PayPal account needed).** PayPal publishes a sandbox
+credential set in its official Postman collection: https://github.com/paypal/postman-collections, file
+`Collections/PayPal_Public_APIs.json`, collection variables `client_id` and `client_secret`. The collection's own
+note says: "PayPal Public Collection comes with following default public set of credentials stored at the
+Collection level. You may choose to override these values via environment level variables. You may bring your own
+credentials from PayPal Developer Dashboard there." They are **not** copied into this repo. To use them:
+```bash
+npm run sandbox:use-public-creds   # fetches that file from GitHub, writes ~/.config/tillwise/paypal-sandbox.env (mode 600)
+```
+It never prints the values and refuses to overwrite a file holding other credentials unless you add `-- --force`
+(a `.bak` copy is kept); `-- --dry-run` only checks. **It is a shared app**: anything you create with it is
+visible to other users of those credentials. Tranche only creates fictional invoices (fake company names,
+`@example.com` recipients) under its own random prefix.
+
+**Option B — your own sandbox app.** Follow PayPal's steps (https://developer.paypal.com/api/rest/, "Get client ID
+and client secret"): "Select Log in to Dashboard and log in or sign up. Select Apps & Credentials. New accounts come
+with a Default Application in the REST API apps section. To create a new project, select Create App. Copy the client
+ID and client secret for your app." Use the **sandbox** credentials, then:
+```bash
+mkdir -p ~/.config/tillwise
+printf 'PAYPAL_CLIENT_ID=%s\nPAYPAL_CLIENT_SECRET=%s\n' '<client id>' '<secret>' > ~/.config/tillwise/paypal-sandbox.env
+chmod 600 ~/.config/tillwise/paypal-sandbox.env
+```
+(Or export `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`, which override the file.) Tranche never prints, logs or
+commits these values; errors show `***` instead.
+
+**Then, with either option:**
+1. `npm run sandbox:smoke` — token, list and search (read-only), then one draft `…SMOKE-…` that it deletes again.
+   Prints `ok`/`FAIL` per step and the number of PayPal requests (7 in our run).
+2. `npm run sandbox:seed` — creates the five demo invoices under a new prefix such as `TR-AM5A7-INV-1…5` and saves
+   the prefix in `.tranche/sandbox-state.json`. INV-2/INV-5 are sent as share links (PayPal status `UNPAID`, no
+   PayPal e-mail), INV-1/INV-4 get a recorded bank transfer (`MARKED_AS_PAID`), INV-3 stays `DRAFT`. Reruns find the
+   saved set instead of duplicating it (20 requests first time, 9 on a rerun). `-- --fresh` starts a new set, e.g.
+   after a rehearsal left INV-2 paid.
+3. `TRANCHE_PAYPAL=sandbox npm start` — the badge says **PayPal: REAL SANDBOX API**; the PayPal-events header shows
+   `api-m.sandbox.paypal.com`, the credentials ("PayPal public default credentials" for option A) and the prefix.
+   The app polls `search-invoices` every 30 s (never faster against the real sandbox). If the demo invoices are
+   missing it exits and asks you to run the seed.
+4. In the app: review the overdue INV-2, apply and undo, then **Demo controls → Record bank transfer** for INV-2.
+   That records a real external payment in PayPal (`MARKED_AS_PAID`); the next poll turns it into an
+   `INVOICING.INVOICE.PAID` event, pending cards go stale, and the agent can release the plan to the payment date.
 
 What to know:
 - Without credentials, `sandbox:smoke`, `sandbox:seed` and `TRANCHE_PAYPAL=sandbox npm start` print
   `NO CREDENTIALS` and exit 2 **without any network request**.
 - "9 days overdue" is computed from the invoice's due date and the demo clock (`TRANCHE_TODAY`, default
-  2026-11-03); PayPal has no OVERDUE status. Whether PayPal accepts a past due date at create time is unverified,
-  so the seed has a documented fallback ([docs/FACTS_PAYPAL_INVOICING.md](docs/FACTS_PAYPAL_INVOICING.md) §6).
-- *Client pays via PayPal* is disabled in sandbox mode: a real PayPal payment needs a sandbox buyer paying the
-  invoice link in a browser. *Record bank transfer* records the payment through the API instead.
-- Only invoices whose number starts with `TRANCHE-` are read or changed. `TRANCHE_INVOICE_PREFIX=TR2-` seeds a
-  fresh set if a rehearsal left INV-2 paid.
+  2026-11-03); PayPal has no OVERDUE status. The real sandbox accepts the past due date and a payment dated on the
+  demo clock.
+- *Client pays via PayPal* is disabled in sandbox mode, with an on-screen note: a real PayPal payment needs a sandbox
+  **buyer** paying the invoice link in a browser. The demo records the payment through the Invoicing API instead
+  (*Record bank transfer*). We have not done a browser buyer payment.
+- PayPal does not let anyone cancel a paid invoice (`CANNOT_CANCEL_PAID_INVOICE`), so paid demo invoices stay in the
+  sandbox app; drafts and unpaid ones are deleted or cancelled by the live test.
 - The client only talks to `https://api-m.sandbox.paypal.com`; the live host is refused in code.
 
 The PayPal Server SDK 2.5.0 has no Invoicing controller, so the client uses REST. An optional cross-check that a
@@ -99,22 +123,24 @@ quotes: [docs/FACTS_BRYNTUM_LICENCE.md](docs/FACTS_BRYNTUM_LICENCE.md).
 2. Click **Review overdue INV-2** (or type a question). The agent previews the shift: dashed ghost bars, a banner
    and an approval card. Nothing moves yet.
 3. **Apply to plan** → the Bryntum engine moves the dependent chain in one STM transaction; **Undo** reverts it.
-4. Open **Demo controls** → *Client pays via PayPal*. Pending cards become **stale**; ask again and the agent
-   proposes pulling the plan to the real payment date.
+4. Open **Demo controls** → *Client pays via PayPal* (mock) or *Record bank transfer* (mock or real sandbox; the
+   payment is recorded in PayPal). Pending cards become **stale**; ask again and the agent proposes pulling the
+   plan to the real payment date.
 
 ## Tests
 
 ```bash
-npm test             # 57 unit tests (scheduler, mock PayPal, sandbox client vs a local stub, broker, tools, API, SDK contract)
+npm test             # 64 unit tests (scheduler, mock PayPal, sandbox client vs a local stub, broker, tools, API, SDK contract)
 npm run test:e2e     # 9 Playwright tests through the real UI (scripted agent; headless Chrome; 1 in sandbox mode vs the stub)
-npm run sandbox:smoke  # real PayPal sandbox, needs your credentials (see above)
-npm run sandbox:seed   # real PayPal sandbox, needs your credentials (see above)
+npm run sandbox:smoke  # real PayPal sandbox, needs credentials (see above)
+npm run sandbox:seed   # real PayPal sandbox, needs credentials (see above)
+npm run test:sandbox-live  # opt-in: full demo through the real UI against the REAL PayPal sandbox (~30 PayPal requests)
 npm run test:byok    # BYOK wiring against a local stub endpoint with a fake key (no network)
 npm run test:live    # real model through the real UI (needs a Copilot login; set EXPECTED_GITHUB_LOGIN=<you>)
 ```
 
-Screenshots and evidence JSON are written by the tests to `artifacts/screenshots/{e2e,live}` and
-`artifacts/{e2e,live}`.
+Screenshots and evidence JSON are written by the tests to `artifacts/screenshots/{e2e,live,sandbox}` and
+`artifacts/{e2e,live,sandbox}`.
 
 ## Licence
 This repository's own code is MIT ([LICENSE](LICENSE)). Bryntum Gantt/Scheduler/Calendar are commercial software installed from the public npm trial packages

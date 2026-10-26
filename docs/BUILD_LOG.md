@@ -105,6 +105,7 @@ Commits: `c7072ac` (M1), `e429822` (M2), `5732400` (M3 live + SDK), then the doc
 |---|---|---|---|
 | — | none (M1–M3 copied no entry-1 code; the broker, audit log, mock client and Copilot runner were written fresh) | — | — |
 | — | none (M4-prep, 2026-10-25: the sandbox client, seed/smoke scripts and the stub server were written fresh; entry 1's `liveClient.ts` was **not** opened or copied, on the user's instruction) | — | — |
+| — | none (M4-live, 2026-10-26: the probe, the public-credentials helper, the call ledger and the real-sandbox e2e were written fresh) | — | — |
 
 - **Third-party code copied:** none. New dependencies: `@paypal/paypal-server-sdk@2.5.0` (MIT, `npm view` → `license = 'MIT'`), `playwright-core@1.56.1` (dev, Apache-2.0).
 
@@ -195,3 +196,60 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
   One deadlock happened: my idle scripted server (cwd in this repo) blocked the other entry's `/tmp/tw-busy.sh`
   while its waiting shell blocked mine. I stopped my server and waiting script (by PID via the tool) and let the
   other entry go first.
+
+## 2026-10-26 — M4-live: the real PayPal sandbox
+- **Credentials:** PayPal's default *public* sandbox set, written by the user to `~/.config/tillwise/paypal-sandbox.env`
+  (mode 600). Source: https://github.com/paypal/postman-collections, `Collections/PayPal_Public_APIs.json`, collection
+  variables `client_id` / `client_secret`; the collection's note: "PayPal Public Collection comes with following
+  default public set of credentials stored at the Collection level. You may choose to override these values via
+  environment level variables. You may bring your own credentials from PayPal Developer Dashboard there." Token
+  `app_id` APP-80W284485P519543T. **Shared app** → fake names, `@example.com` recipients, a unique prefix per set.
+  Values never printed; a byte scan of all repo files for id, secret and Basic base64 found 0 hits before committing.
+- **PayPal call budget (≤ 250):** every request is appended to `artifacts/sandbox/paypal-calls.jsonl` (method, path
+  without query, status, duration, PayPal-Debug-Id; no headers or bodies). Before the video: **163 requests**:
+
+  | Ledger lines | Requests | What |
+  |---|---|---|
+  | 1–13 | 13 | `npm run sandbox:probe` — the fact probe (prefix `TRP-9112L-`) |
+  | 14–20 | 7 | `npm run sandbox:smoke` — 5/5 ok, draft deleted (`artifacts/sandbox/smoke-2026-10-26.txt`) |
+  | 21–40 | 20 | `npm run sandbox:seed` — new set `TR-AM5A7-` (`seed-2026-10-26.txt`) |
+  | 41–49 | 9 | seed rerun — all five `found`, nothing created (`seed-2026-10-26-rerun.txt`) |
+  | 50–72 | 23 | **accidental** `npm run test:sandbox-live`: I piped it into `head -0` meaning to check nothing, but that still runs the test. It failed early on a field-name bug in the test (`invoice_id`); its cleanup deleted the draft and cancelled the unpaid invoice |
+  | 73–99 | 27 | live e2e run 2 — failed at the release step: the real search result has no payment date (see below) |
+  | 100–103 | 4 | two read-only searches recording the search-result shape (the first only got numbers because `searchRaw` dropped the items) |
+  | 104–133 | 30 | live e2e run 3 — test passed, but a poll after cleanup hit the deleted draft ("Unknown invoice INV-3") → fixed |
+  | 134–163 | 30 | live e2e run 4 — **clean pass** (1/1, exit 0) |
+
+  Non-2xx responses: the two expected probe 422s, one expected 404 (smoke checks its deleted draft), and one real
+  **503** on a GET that the client retried successfully.
+- **Fixes driven by the real API** (all unit-tested against the stub, which now mimics each answer):
+  - `search_data.invoice_number` is a prefix match → every search sends the set's prefix, so nothing outside the
+    set is read in the shared app.
+  - Search items carry `payments.paid_amount` but no `transactions` → paid/refunded invoices are read once with
+    GET, cached by status and amount; the stub's search strips `transactions` too.
+  - Duplicate numbers are rejected (`DUPLICATE_INVOICE_NUMBER`) → `sandbox:seed` generates a `TR-XXXXX-` prefix and
+    saves it in `.tranche/sandbox-state.json`; `-- --fresh` starts a new set.
+  - Future payment dates are accepted → "Record bank transfer" uses the demo date (refunds stay clamped).
+  - A draft deleted in PayPal no longer crashes the plan: the watcher keeps the last copy and the app audits
+    `paypal.invoice_missing` once; `close()` ignores late polls.
+  - Polling against the real sandbox is never faster than 30 s (5 s only for the loopback stub).
+- **UI:** badge `PayPal: REAL SANDBOX API`; the PayPal-events header shows the host, "PayPal public default
+  credentials" (when `app_id` is APP-80W284485P519543T) and the prefix; a visible note under the demo controls says a
+  PayPal-button payment needs a sandbox buyer in a browser, so the demo records the payment via the API.
+  Milestone labels got an opaque background (the Today line ran through "INV-2 €4,800").
+- **Opt-in real-sandbox e2e** `npm run test:sandbox-live` (`LIVE_PAYPAL=1`; not part of `test:e2e`;
+  `LIVE_PAYPAL=stub` runs the same flow against the stub for debugging and writes nothing). Seeds its own set,
+  drives overdue → preview → apply → undo (`undone`) → Record bank transfer → `INVOICING.INVOICE.PAID` →
+  reminder `stale` → release → apply, asserting broker, Bryntum engine and audit state and PayPal's own GET
+  (`MARKED_AS_PAID`, `EXTERNAL`, `BANK_TRANSFER`, 2026-11-03). Then it deletes the draft and cancels the unpaid
+  invoices it created. Evidence `artifacts/sandbox/sandbox-live-flow.json`; screenshots
+  `artifacts/screenshots/sandbox/S1…S6`. Scripted agent → evidence about PayPal + Bryntum, not about the model.
+- **`npm run sandbox:use-public-creds`** (new, MIT, written fresh): fetches PayPal's collection from GitHub at run
+  time, accepts only the collection-level pair labelled "default public set of credentials", writes the env file
+  with mode 600, never prints values, refuses to overwrite other credentials without `--force` (keeps `.bak`).
+  Real run: `--dry-run` ok; a write to a temp file produced exactly the user's values (compared in code, not
+  printed); against the user's file it reported "already present, file unchanged" (mtime unchanged).
+- **Left in the shared sandbox app:** the probe invoice `TRP-9112L-PAST` (paid, cannot be cancelled), the demo set
+  `TR-AM5A7-INV-1…5` (needed by the app and the video), and the paid INV-1/2/4 of each live e2e set (cannot be
+  cancelled). The e2e runs deleted their drafts and cancelled their unpaid invoices.
+- Tests: `npm test` 64/64, `npm run test:e2e` 9/9, `npm run test:sandbox-live` 1/1 (real sandbox).
