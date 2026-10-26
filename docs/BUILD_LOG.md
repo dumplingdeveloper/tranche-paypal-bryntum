@@ -156,3 +156,19 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
   `PayPal: MOCK …` and `Agent:  Copilot · gpt-6-luna (copilot-login:yuxinshiu63)` (no model turn was sent);
   `/api/state` returned INV-1 PAID, INV-2 SENT, INV-3 DRAFT, INV-4 PAID, INV-5 SENT and 12 tasks. Server (PID
   33308) killed; clone removed.
+
+## 2026-10-26 — M5 draft video render (mock PayPal, live agent)
+- **Visual nit fixed first (commit `686d954`):** the line crossing "INV-2 €4,800" was Bryntum's *Today* time-range
+  line (DOM probe: `.b-sch-time-range.b-sch-line` z-index 10 above `.b-sch-foreground-canvas` z-index 6), not a
+  dependency line. It now paints at z-index 5 (behind bars and labels) and its badge drops 20 px below the first
+  summary bar. e2e test 1 asserts `line_z < foreground_z` and that the badge overlaps no bar
+  (`artifacts/e2e/01-plan.json` → `today_line: {line_z: 5, foreground_z: 6, badge_on_bars: []}`). `npm run test:e2e`
+  9/9, `npm test` 57/57; all e2e screenshots re-written by the tests.
+- **Render:** `video/out/tranche-draft-mock.mp4`, 164.133333 s, 1920×1080, md5 `602ff146f730d297a7fb887379157cca`,
+  10,095,503 bytes. Commands, fast-forward segments, frames and mismatches: docs/VIDEO_RENDER.md.
+- **Live run:** `gpt-6-luna` / `copilot-login:yuxinshiu63`, **2 live user turns** (owner question + auto-watch on
+  `INVOICING.INVOICE.PAID`), 5 + 3 tool calls (listed in docs/VIDEO_RENDER.md). Build total **6 of 35**. The dry run
+  used the scripted agent (no video, not counted).
+- **Pipeline changes:** compose.js card text from the scene and a sample-frame clamp; tts.js no longer overwrites
+  video/LICENSES.md (provenance updated there).
+- **CPU courtesy:** `pgrep -f moneyDeskLive` was empty before the TTS, the recording and the compose run; AC power.

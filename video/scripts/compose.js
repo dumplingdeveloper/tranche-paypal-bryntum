@@ -235,18 +235,19 @@ async function renderSubtitle(text, png, bandHeight, browser = null) {
   return bbox;
 }
 
+// Tranche: card text comes from scene.intro / scene.outro (adapted from the Tillwise original, which hard-coded its own text).
+function escHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function cardHtml(kind, scene) {
-  const title = scene.projectName || 'Store Owner Voice Agent';
-  const tagline = scene.tagline || 'Voice-guided WooCommerce operations with transparent MCP actions';
-  const github = scene.github || '<repo-url placeholder>';
-  const main = kind === 'intro' ? title : 'Thanks for watching';
-  const sub = kind === 'intro' ? tagline : 'GitHub: ' + github;
-  const note = kind === 'intro' ? '' : '<div class="note">The Alexa+ experience simulator is an unofficial demo, not an Amazon product.</div>';
+  const c = (kind === 'intro' ? scene.intro : scene.outro) || {};
+  const eyebrow = escHtml(c.eyebrow || '');
+  const main = escHtml(c.title || (kind === 'intro' ? scene.projectName : 'Thanks for watching'));
+  const sub = escHtml(c.sub || '');
+  const note = c.note ? `<div class="note">${escHtml(c.note)}</div>` : '';
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     body{margin:0;width:1920px;height:1080px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:white;background:radial-gradient(circle at 20% 20%,#5755ff 0,#1b2258 34%,#091226 72%);display:grid;place-items:center;overflow:hidden}
     .orb{position:absolute;width:720px;height:720px;border-radius:50%;background:linear-gradient(135deg,#67e8f9,#a78bfa,#f0abfc);filter:blur(18px);opacity:.28;right:-180px;top:-160px}.card{width:1320px;padding:86px 98px;border:1px solid rgba(255,255,255,.22);border-radius:48px;background:rgba(8,15,35,.62);box-shadow:0 40px 140px rgba(0,0,0,.45)}
     .eyebrow{letter-spacing:.22em;text-transform:uppercase;color:#a7f3d0;font-size:28px;font-weight:800}.title{font-size:92px;line-height:1.02;margin:30px 0 24px;font-weight:900}.sub{font-size:40px;line-height:1.35;color:#dbeafe}.note{font-size:25px;line-height:1.35;color:#bfdbfe;margin-top:30px}.rule{height:6px;width:220px;border-radius:9px;background:#38bdf8;margin-top:54px}
-  </style></head><body><div class="orb"></div><section class="card"><div class="eyebrow">Build, Ship, Shape demo video</div><div class="title">${main}</div><div class="sub">${sub}</div>${note}<div class="rule"></div></section></body></html>`;
+  </style></head><body><div class="orb"></div><section class="card"><div class="eyebrow">${eyebrow}</div><div class="title">${main}</div><div class="sub">${sub}</div>${note}<div class="rule"></div></section></body></html>`;
 }
 
 async function main() {
@@ -255,8 +256,8 @@ async function main() {
   const scene = readScene(args.scene);
   const bandHeight = Number(args['subtitle-band-height'] || scene.subtitleBandHeight || 140);
   const maxSilenceSeconds = Number(args.maxSilenceMs || scene.maxSilenceMs || 1500) / 1000;
-  const github = String(scene.github || '');
-  if (!github || /placeholder/i.test(github)) throw new Error('Scene github must be a real URL and must not be empty or contain "placeholder".');
+  if (!scene.intro?.title || !scene.outro?.sub) throw new Error('Scene needs intro.title and outro.sub (card text).');
+  if (/placeholder/i.test(JSON.stringify([scene.intro, scene.outro]))) throw new Error('Card text must not contain "placeholder".');
   const contentHeight = FRAME_HEIGHT - bandHeight;
   if (contentHeight < 600 || bandHeight < 80) throw new Error(`Invalid subtitle band height: ${bandHeight}`);
   const manifestPath = path.join(OUT_DIR, 'recording-manifest.json');
@@ -456,7 +457,8 @@ async function main() {
   const firstCaption = subtitleOverlays.find(s => s.action === 'caption') || subtitleOverlays.find(s => s.start > INTRO_SECONDS) || subtitleOverlays[0];
   const assistantEvent = audioEvents.find(e => e.role === 'assistant' || e.voice === 'ASSISTANT') || audioEvents.at(-1);
   run(FFMPEG, ['-y', '-ss', String(firstCaption ? firstCaption.start + 0.4 : duration * 0.35), '-i', demoMp4, '-frames:v', '1', captionFrame]);
-  run(FFMPEG, ['-y', '-ss', String(assistantEvent ? INTRO_SECONDS + assistantEvent.at + 8.5 : duration * 0.5), '-i', demoMp4, '-frames:v', '1', cardFrame]);
+  // Tranche: clamp inside the video (the original could seek past the end when the last clip is the assistant's).
+  run(FFMPEG, ['-y', '-ss', String(Math.min(duration - 0.5, assistantEvent ? INTRO_SECONDS + assistantEvent.at + 8.5 : duration * 0.5)), '-i', demoMp4, '-frames:v', '1', cardFrame]);
   frames.push(rel(captionFrame), rel(cardFrame));
   const introItem = timeline.find(t => /unofficial Alexa plus experience simulator/i.test(t.text)) || timeline[0];
   const firstOwnerAsk = timeline.find(t => t.role === 'OWNER' || t.role === 'owner');

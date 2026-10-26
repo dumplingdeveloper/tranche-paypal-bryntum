@@ -1,0 +1,66 @@
+{
+  "projectName": "Tranche",
+  "intro": {
+    "eyebrow": "PayPal AI Hackathon · draft demo",
+    "title": "Tranche",
+    "sub": "PayPal invoice tranches drive a Bryntum delivery plan. An AI agent proposes; a human approves.",
+    "note": "Draft render. PayPal runs as a deterministic, sandbox-shaped mock in this video."
+  },
+  "outro": {
+    "eyebrow": "Tranche · MIT licence",
+    "title": "Thanks for watching",
+    "sub": "npm install && npm start — then open the board on port 4317.",
+    "note": "This draft uses mock PayPal. A sandbox Invoicing v2 client is built and unit-tested against a local stub, but has not yet run against the real PayPal sandbox. Bryntum Gantt and SchedulerPro trial, watermark left visible. Repository link: on the Devpost page."
+  },
+  "subtitleBandHeight": 140,
+  "maxSilenceMs": 1200,
+  "clipGapMs": 250,
+  "tailMs": 1200,
+  "steps": [
+    { "action": "goto", "url": "/", "waitUntil": "load" },
+    { "action": "waitFor", "selector": "#gantt .b-gantt-task-wrap[data-task-id=acme-build]", "timeout": 20000 },
+    { "action": "pause", "ms": 1200 },
+    { "action": "say", "voice": "NARRATOR", "text": "Freelancers and small agencies get paid in tranches. Tranche turns every PayPal invoice into a milestone on a Bryntum Gantt, and each delivery phase depends on the payment before it." },
+    { "action": "say", "voice": "NARRATOR", "text": "Acme's second invoice is nine days overdue, so the build phase it unlocks is blocked, in red. The team capacity view below is a Bryntum Scheduler Pro on the same project, so bookings follow the plan." },
+
+    { "action": "say", "voice": "OWNER", "text": "Invoice two for Acme is nine days overdue. What does that do to the plan? Draft a reminder too." },
+    { "action": "type", "selector": "#ask-input", "text": "Invoice INV-2 for Acme is 9 days overdue. What does that do to the plan? Draft a reminder too.", "delayMs": 12 },
+    { "action": "click", "selector": "#ask-form button[type=submit]" },
+    { "action": "say", "voice": "NARRATOR", "text": "The agent runs on the GitHub Copilot SDK. Its tools can read the board and file requests, but they cannot change anything. And it never does date maths: it asks our scheduler for a preview." },
+    { "action": "waitFor", "selector": ".conf.pending:has-text(\"Schedule change\")", "timeout": 180000 },
+    { "action": "waitFor", "selector": ".conf.pending:has-text(\"PayPal reminder\")", "timeout": 180000 },
+    { "action": "waitFor", "selector": "#agent-status", "state": "hidden", "timeout": 180000 },
+    { "action": "pause", "ms": 600 },
+    { "action": "say", "voice": "NARRATOR", "text": "The dashed ghost bars are that preview. The phases behind invoice two slide, and the banner says how far Acme's delivery slips. Nothing has moved yet." },
+    { "action": "say", "voice": "NARRATOR", "text": "The agent filed two requests: apply the new dates, and send a PayPal reminder with a friendly note. Each card is bound to its preview and a payload hash, and only the owner can approve." },
+
+    { "action": "click", "selector": ".conf.pending:has-text(\"Schedule change\") button[data-action=approve]" },
+    { "action": "waitFor", "selector": "#undo:not([disabled])", "timeout": 20000 },
+    { "action": "pause", "ms": 900 },
+    { "action": "say", "voice": "NARRATOR", "text": "Apply runs inside the Bryntum engine as one transaction. The browser reports the engine's dates back, and the server checks every one of them." },
+    { "action": "click", "selector": "#undo" },
+    { "action": "waitFor", "selector": "#undo[disabled]", "timeout": 20000 },
+    { "action": "say", "voice": "NARRATOR", "text": "Changed my mind? Undo reverts it through Bryntum's state tracking manager, and the plan is back where it was." },
+
+    { "action": "click", "selector": "details.demo > summary" },
+    { "action": "reveal", "selector": "[data-sim=payer_pays]", "block": "center", "waitMs": 500 },
+    { "action": "say", "voice": "NARRATOR", "text": "Now the client pays. PayPal is a mock in this draft, so a demo button plays the payer." },
+    { "action": "click", "selector": "[data-sim=payer_pays]" },
+    { "action": "waitFor", "selector": ".conf.stale:has-text(\"PayPal reminder\")", "timeout": 20000 },
+    { "action": "reveal", "selector": ".conf.stale:has-text(\"PayPal reminder\")", "block": "center", "waitMs": 500 },
+    { "action": "say", "voice": "NARRATOR", "text": "The paid event arrives, and the reminder I never sent turns stale. It can't be approved any more, so nobody nags a client who just paid." },
+    { "action": "say", "voice": "NARRATOR", "text": "The payment event also wakes the agent by itself. It proposes moving the plan to the real payment date." },
+    { "action": "waitFor", "selector": ".conf.pending:has-text(\"Schedule change\")", "timeout": 180000 },
+    { "action": "waitFor", "selector": "#agent-status", "state": "hidden", "timeout": 180000 },
+    { "action": "reveal", "selector": ".conf.pending:has-text(\"Schedule change\")", "block": "center", "waitMs": 600 },
+    { "action": "click", "selector": ".conf.pending:has-text(\"Schedule change\") button[data-action=approve]" },
+    { "action": "waitFor", "selector": "#undo:not([disabled])", "timeout": 20000 },
+    { "action": "pause", "ms": 900 },
+    { "action": "say", "voice": "NARRATOR", "text": "One click, and the build phase now starts on the day the money arrived." },
+
+    { "action": "reveal", "selector": "#audit", "block": "end", "waitMs": 700 },
+    { "action": "say", "voice": "NARRATOR", "text": "Every request, approval, apply, undo and PayPal event lands in the audit log." },
+    { "action": "say", "voice": "NARRATOR", "text": "The top bar says exactly what is running: PayPal is a mock in this draft, and the agent is a live model through the GitHub Copilot SDK. Judges can bring their own key, or use the clearly labelled scripted agent." },
+    { "action": "say", "voice": "NARRATOR", "text": "Tranche: PayPal payments that move the plan, with a human in the loop." }
+  ]
+}

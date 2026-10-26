@@ -1,6 +1,9 @@
 # Tranche demo video: script and render plan (target 2:45, hard limit < 3:00)
 
-Status: **script only, not rendered.** Rendering is M5, after review.
+Status: **draft rendered in M5 (mock PayPal, live agent), see docs/VIDEO_RENDER.md.** The narration actually used is
+in `video/scenes/tranche.json`; where it differs from the table below, the scene file wins (e.g. the overdue
+invoice is spoken as "invoice two", and the release preview comes from the agent's auto-watch turn, not a second
+owner question).
 
 The narration is written for the Kokoro TTS voices the pipeline already uses (NARRATOR `af_bella`, OWNER
 `am_fenrir`, see video/LICENSES.md). The screen is the real app at 1920×940 (the pipeline records

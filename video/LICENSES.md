@@ -22,6 +22,12 @@ them. md5 of the source files at copy time (identical copies):
 
 Not copied: `node_modules/`, `out/`, `stub/`, the old scenes, `record-live.js`.
 
+### Changed after copying (M5, 2026-10-26; still GPL-2.0-or-later)
+- `scripts/compose.js`: card text from the scene (`intro`/`outro`) instead of the source project's hard-coded text;
+  the `github` URL check replaced by a card-text check; the "card-bottom" sample frame clamped inside the video.
+- `scripts/tts.js`: writes its licence check to `out/tts-licence-check.md` instead of overwriting this file.
+- New: `scenes/tranche.json` (our scene). Details: docs/VIDEO_RENDER.md.
+
 ## Text to speech (from the source project's LICENSES.md)
 - kokoro-js 1.2.1, Apache-2.0 (https://www.npmjs.com/package/kokoro-js)
 - Model onnx-community/Kokoro-82M-v1.0-ONNX, `cardData.license: apache-2.0`

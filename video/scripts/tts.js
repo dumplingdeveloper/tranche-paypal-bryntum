@@ -36,7 +36,8 @@ function writeLicenses(facts) {
     `## Voices\n\n` +
     voiceNotes.map(([role, name, why]) => `- ${role}: \`${name}\` — ${why}`).join('\n') +
     `\n\nVoice quality source: kokoro-js README/model-card voice table, https://huggingface.co/${MODEL_ID}#samples\n`;
-  fs.writeFileSync(path.join(path.dirname(OUT_DIR), 'LICENSES.md'), md);
+  // Tranche: write the check result to out/ so it never overwrites video/LICENSES.md (our provenance record).
+  fs.writeFileSync(path.join(OUT_DIR, 'tts-licence-check.md'), md);
 }
 
 function wavDurationSeconds(file) {
