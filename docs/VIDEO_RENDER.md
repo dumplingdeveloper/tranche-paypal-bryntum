@@ -78,7 +78,7 @@ for t in 12 62 97 106 125 146 155; do ffmpeg -v error -y -ss $t -i video/out/tra
 ## ASR check (faster-whisper base.en, the user's tool)
 `# script words 383, heard words 384, ratio 0.960`. All 13 differences are spelling variants:
 instalments/installments, bryntum/brintum (×4, once "brintum s"), two/2 (×2), too/to, copilot/co pilot (×2),
-every one/everyone, any more/anymore, labelled/labeled. Transcript in script order (`/tmp/tranche-asr-sandbox.txt`).
+every one/everyone, any more/anymore, labelled/labeled. Transcript in script order (`video/out/sandbox-asr.txt`, gitignored).
 
 ## Frames (`artifacts/video-frames/sandbox/`, fixed timestamps, all viewed)
 | File | md5 | Caption at that moment | What is on screen |
