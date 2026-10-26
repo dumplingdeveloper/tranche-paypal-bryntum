@@ -1,7 +1,8 @@
 # Tranche demo video: script and render plan (target 2:45, hard limit < 3:00)
 
-Status: **draft rendered in M5 (mock PayPal, live agent), see docs/VIDEO_RENDER.md.** The narration actually used is
-in `video/scenes/tranche.json`; where it differs from the table below, the scene file wins (e.g. the overdue
+Status: **current draft rendered in M4-live against the real PayPal sandbox (live agent), see docs/VIDEO_RENDER.md;
+the earlier M5 draft used mock PayPal.** The narration actually used is in `video/scenes/tranche-sandbox.json`
+(sandbox) and `video/scenes/tranche.json` (mock); where it differs from the table below, the scene file wins (e.g. the overdue
 invoice is spoken as "invoice two", and the release preview comes from the agent's auto-watch turn, not a second
 owner question).
 

@@ -11,7 +11,7 @@ submission time (repo URL, video URL). Every claim below points at a file, a tes
 | "Include a text description that should explain the features and functionality" | sections below | draft |
 | "judges must be able to actually run or interact with a working build" … "clear, complete setup and run instructions" | README "Quick start for judges": `npm install && npm start`, no keys; verified on a fresh `git clone` (docs/BUILD_LOG.md "Clean clone") | ok |
 | "public and open source by including an open source license file … visible at the top of the repository page" | `LICENSE` (MIT) | repo not published yet (user pushes; we never push) |
-| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_RENDER.md (draft, mock PayPal, 2:46.13) | draft rendered locally; not uploaded to YouTube |
+| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_RENDER.md (draft: real PayPal sandbox + live model, 2:53.8) | draft rendered locally; not uploaded to YouTube |
 | "must not include third party trademarks … unless the Entrant has permission" | Video uses only our UI; Bryntum trial watermark visible as shipped; no music | check at render time |
 | "any test account credentials, API keys, or sandbox login details necessary" | None needed in mock mode; agent falls back to the labelled scripted agent; BYOK documented | ok |
 | "Third Party Integrations … must be authorized to use them in accordance with any … licensing requirements" | Bryntum trial per the sponsor page; open question on judging use → docs/FACTS_BRYNTUM_LICENCE.md §4 | **open: ask Bryntum on Discord** |
@@ -120,7 +120,7 @@ anthropic, ollama, typescript, node.js, playwright
 ## Try it out
 - Repo: [https://github.com/yuxinshiu63/<repo>] (MIT)
 - Video: [YouTube URL]
-- Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the
+- Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the real-sandbox
   recorded live take; see docs/VIDEO_RENDER.md "Devpost media")
 - Run: `npm install && npm start` → http://127.0.0.1:4317/ (mock PayPal, no keys)
 - Real PayPal sandbox: `npm run sandbox:use-public-creds && npm run sandbox:seed && TRANCHE_PAYPAL=sandbox npm start`
@@ -151,6 +151,13 @@ Tranche is a **new project** started for this hackathon. All commits are in this
 | fc00e76 | 2026-10-25 23:34 +00:00 | M4-prep: stub-server tests, no-credentials/no-network test |
 | 9ca9bf6 | 2026-10-25 23:38 +00:00 | M4-prep: sandbox-mode e2e through the UI against the stub |
 | e210ce0 | 2026-10-25 23:40 +00:00 | M4-prep: error `field` in messages; due-date fallback |
+| ffd7aa8 … 686d954 | 2026-10-25 23:42–23:53 +00:00 | M4-prep docs; Today line drawn behind bars and labels |
+| f19307b | 2026-10-26 00:22 +00:00 | M5: draft demo video render (mock PayPal, live gpt-6-luna agent) |
+| 7a07d15 | 2026-10-26 00:38 +00:00 | Undo marks the schedule card UNDONE (broker state + audit) |
+| d7fc3c3, 8a94832 | 2026-10-26 12:28 +00:00 | Video polish; Devpost gallery and thumbnail from real UI stills |
+| afa1feb | 2026-10-26 13:13 +00:00 | M4-live: fixes from the real PayPal sandbox, opt-in real-sandbox e2e, REAL SANDBOX API badge |
+| c1072d6 | 2026-10-26 13:15 +00:00 | `npm run sandbox:use-public-creds` |
+| d544b95, ef2581f | 2026-10-26 13:20–13:25 +00:00 | M4-live docs; sandbox video scene |
 
 The official rules give the window: "Submission Period: Thursday Oct 1, 2026 (9:15 am Pacific Time) – Thursday
 Nov 12, 2026 (12:00 pm Pacific Time)" (https://paypalaihackathon.devpost.com/rules, fetched by the user

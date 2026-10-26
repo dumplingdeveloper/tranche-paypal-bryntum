@@ -249,7 +249,28 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
   with mode 600, never prints values, refuses to overwrite other credentials without `--force` (keeps `.bak`).
   Real run: `--dry-run` ok; a write to a temp file produced exactly the user's values (compared in code, not
   printed); against the user's file it reported "already present, file unchanged" (mtime unchanged).
-- **Left in the shared sandbox app:** the probe invoice `TRP-9112L-PAST` (paid, cannot be cancelled), the demo set
-  `TR-AM5A7-INV-1…5` (needed by the app and the video), and the paid INV-1/2/4 of each live e2e set (cannot be
-  cancelled). The e2e runs deleted their drafts and cancelled their unpaid invoices.
+- **Left in the shared sandbox app:** the probe invoice `TRP-9112L-PAST` (paid, cannot be cancelled), the paid
+  `TR-AM5A7-INV-1/2/4` of the video set (its INV-5 was cancelled and its INV-3 draft deleted after the video), and the
+  paid INV-1/2/4 of each live e2e set (cannot be cancelled). The e2e runs deleted their drafts and cancelled their
+  unpaid invoices; a final check of `TR-8KZ7A-` (run 2) found nothing open.
 - Tests: `npm test` 64/64, `npm run test:e2e` 9/9, `npm run test:sandbox-live` 1/1 (real sandbox).
+- **Sandbox video** (scene `video/scenes/tranche-sandbox.json`, commit `ef2581f`): dry run first against the local
+  stub with the scripted agent (no sandbox calls). Then, on AC power and after the user's busy check, one take with
+  `TRANCHE_PAYPAL=sandbox` on the reserved `TR-AM5A7-` set and the live model: **2 live turns** (t1 owner question,
+  5 tool calls; t2 auto-watch on `INVOICING.INVOICE.PAID`, 3 tool calls), build total **10 of 35**.
+  `video/out/tranche-draft-sandbox.mp4`: 173.8 s, 1920×1080, md5 `c17d021d775ceeaf1e4f16a45b11c9cc`,
+  10,835,970 bytes; ASR ratio 0.960 (spelling variants only). 29 PayPal requests during the take (ledger 164–192),
+  including one real `401 invalid_token` mid-session that the client recovered from by fetching a new token.
+  Gallery and thumbnail regenerated from this take's stills (`MEDIA_PAYPAL=sandbox` footer). Details:
+  docs/VIDEO_RENDER.md.
+- **Cleanup after the video:** 6 requests (ledger 193–198): `TR-AM5A7-` INV-5 cancelled, INV-3 draft deleted;
+  `TR-8KZ7A-` nothing open. The used set's local state file was renamed to
+  `.tranche/sandbox-state.used-TR-AM5A7-.json` (gitignored), so the next `npm run sandbox:seed` creates a new set.
+- **Second accidental real run (my mistake, 13:53Z):** after the final `npm test` / `npm run test:e2e` I ran
+  `npm run test:sandbox-live` believing it would print the skip message. The npm script itself sets `LIVE_PAYPAL=1`,
+  so it started a real run. I stopped it after 20 requests (ledger 199–218: token, search, seed of 5 invoices);
+  stopping it also killed the test before its cleanup. I then cancelled its unpaid INV-2 (`INV2-CFCW-…`) and INV-5
+  (`INV2-6DTE-…`) and deleted its draft INV-3 (`INV2-NVB8-…`) by id, 4 requests (ledger 219–222). Its paid INV-1/INV-4
+  remain (cannot be cancelled). No evidence or screenshots were written by it (they are written later in the flow).
+  Lesson: `npm run test:sandbox-live` *is* the opt-in; the skip message only appears with plain `node --test`.
+- **PayPal requests in this step: 222 of 250** (`wc -l artifacts/sandbox/paypal-calls.jsonl`).
