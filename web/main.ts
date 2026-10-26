@@ -259,10 +259,10 @@ function renderTop(s: State) {
   const creds = s.modes.paypal_public_credentials ? "PayPal's public default sandbox credentials (shared app)" : 'your own sandbox app';
   pp.textContent = !sandbox ? 'PayPal: MOCK' : realSandbox ? 'PayPal: REAL SANDBOX API' : 'PayPal: SANDBOX API · local stub';
   pp.className = `pill ${sandbox ? 'sandbox' : 'mock'}`;
-  pp.title = sandbox ? `PayPal REST Invoicing v2 at ${s.modes.paypal_endpoint}, app ${s.modes.paypal_app_id || '?'} (${creds}), invoices ${s.modes.paypal_prefix || ''}*, polled. Sandbox money is not real.` : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
+  pp.title = sandbox ? `PayPal REST Invoicing v2 at ${s.modes.paypal_endpoint}, app ${s.modes.paypal_app_id || '?'} (${creds}), invoices ${s.modes.paypal_prefix || ''}*, ${s.modes.paypal_poll_s ? 'polled' : 'not polled'}. Sandbox money is not real.` : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
   $('poll-note').textContent = !sandbox ? 'polled from Invoicing API (mock)'
-    : realSandbox ? `polled every ${s.modes.paypal_poll_s ?? 30} s from api-m.sandbox.paypal.com · ${s.modes.paypal_public_credentials ? 'PayPal public default credentials' : `app ${s.modes.paypal_app_id || '?'}`} · ${s.modes.paypal_prefix || ''}*`
-    : 'polled from the sandbox API (local stub)';
+    : realSandbox ? `${s.modes.paypal_poll_s ? `polled every ${s.modes.paypal_poll_s} s` : 'read at start-up and after demo actions (no background polling)'} from api-m.sandbox.paypal.com · ${s.modes.paypal_public_credentials ? 'PayPal public default credentials' : `app ${s.modes.paypal_app_id || '?'}`} · ${s.modes.paypal_prefix || ''}*`
+    : s.modes.paypal_poll_s ? `polled every ${s.modes.paypal_poll_s} s from the sandbox API (local stub)` : 'read at start-up and after demo actions from the sandbox API (local stub, no background polling)';
   const simNote = document.getElementById('sim-note');
   if (simNote) {
     simNote.hidden = !sandbox;

@@ -1,0 +1,50 @@
+{
+  "written_by": "test",
+  "at": "2026-10-26T14:15:44.857Z",
+  "endpoint": "https://api-m.sandbox.paypal.com",
+  "app_id": "APP-80W284485P519543T",
+  "prefix": "TR-QNEP1-",
+  "invoice": {
+    "number": "TR-QNEP1-INV-5",
+    "id": "INV2-WQG6-U8YU-N8MX-LC9K",
+    "status_before": "UNPAID",
+    "status_after_from_paypal": "UNPAID"
+  },
+  "confirmation": {
+    "id": "cf_0002",
+    "kind": "send_reminder",
+    "requested_by": "scripted",
+    "payload_hash": "1edcf4bdbec0ff4381a8d8623c293feee137f95f784a888883ab5d3654f030aa",
+    "status": "approved"
+  },
+  "audit_remind": {
+    "seq": 12,
+    "at": "2026-10-26T14:15:43.848Z",
+    "actor": "paypal",
+    "action": "paypal.invoice.remind",
+    "details": {
+      "invoice_id": "INV2-WQG6-U8YU-N8MX-LC9K",
+      "invoice_number": "INV-5",
+      "mode": "sandbox",
+      "endpoint": "POST /v2/invoicing/invoices/{invoice_id}/remind",
+      "notification": {
+        "send_to_recipient": true,
+        "send_to_invoicer": false
+      },
+      "reminders_today": 1
+    }
+  },
+  "remind_request": {
+    "at": "2026-10-26T14:15:43.500Z",
+    "host": "api-m.sandbox.paypal.com",
+    "method": "POST",
+    "path": "/v2/invoicing/invoices/INV2-WQG6-U8YU-N8MX-LC9K/remind",
+    "status": 204,
+    "ms": 1024,
+    "debug_id": "f222734b2490c",
+    "n": 5
+  },
+  "paypal_requests_in_test": 7,
+  "screenshot": "artifacts/screenshots/sandbox/S7-real-sandbox-reminder-sent.png",
+  "note": "Screenshot S7 was taken before the poll-note fix: its footer says \"polled every 30 s\", but this run had polling off (one snapshot at start-up). web/main.ts now says \"read at start-up and after demo actions (no background polling)\" in that case."
+}

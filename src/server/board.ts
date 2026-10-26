@@ -6,6 +6,9 @@ import type { Assignment, ClientProject, PayPalInvoice, PlanDates, Resource, Sch
 
 export type AppliedChange = { confirmation_id: string; preview_id: string; invoice_number: string; from: string; to: string; applied_at: string };
 
+const numberOrder = new Intl.Collator('en', { numeric: true });
+export const byInvoiceNumber = (a: PayPalInvoice, b: PayPalInvoice) => numberOrder.compare(a.detail.invoice_number, b.detail.invoice_number) || a.id.localeCompare(b.id);
+
 export const scheduleToObject = (s: Schedule) => Object.fromEntries([...s.entries()].map(([id, d]) => [id, { ...d }]));
 
 // The board's single source of truth on the server: latest PayPal invoices (from the watcher) + owner-approved plan dates.
@@ -25,7 +28,8 @@ export class Board {
     // Plan dates are initialised once from the first PayPal snapshot; later status changes never move the plan by themselves.
     const init = initialPlanDates(invoices);
     for (const [num, date] of Object.entries(init)) if (!(num in this.planDates)) this.planDates[num] = date;
-    this.invoices = invoices;
+    // PayPal search returns invoices in its own order (newest first in the real sandbox); the board shows INV-1 … INV-n.
+    this.invoices = [...invoices].sort(byInvoiceNumber);
   }
 
   ctx(): BoardContext {

@@ -1,0 +1,18 @@
+
+> tranche@0.1.0 sandbox:seed
+> node --disable-warning=ExperimentalWarning scripts/sandbox-seed.ts
+
+Seeding https://api-m.sandbox.paypal.com (credentials from file; values not shown), prefix TR-QNEP1- (new set), demo clock 2026-11-03
+┌─────────┬──────────────────┬────────────────────────────┬─────────┬──────────────────┬──────────────┬────────────────────────────┬──────────────┬─────────────────────────────────────┐
+│ (index) │ number           │ id                         │ target  │ status           │ due          │ overdue_days_on_demo_clock │ paid         │ actions                             │
+├─────────┼──────────────────┼────────────────────────────┼─────────┼──────────────────┼──────────────┼────────────────────────────┼──────────────┼─────────────────────────────────────┤
+│ 0       │ 'TR-QNEP1-INV-1' │ 'INV2-XH83-VC8D-TXYV-8MUW' │ 'PAID'  │ 'MARKED_AS_PAID' │ '2026-10-05' │ 0                          │ '2026-10-04' │ 'created → sent → payment recorded' │
+│ 1       │ 'TR-QNEP1-INV-2' │ 'INV2-HDA2-VJ2P-3C5B-8NET' │ 'SENT'  │ 'UNPAID'         │ '2026-10-25' │ 9                          │ ''           │ 'created → sent'                    │
+│ 2       │ 'TR-QNEP1-INV-3' │ 'INV2-9A6Z-VF8U-CWNZ-MUN8' │ 'DRAFT' │ 'DRAFT'          │ '2026-11-22' │ 0                          │ ''           │ 'created'                           │
+│ 3       │ 'TR-QNEP1-INV-4' │ 'INV2-HVSV-SNGT-NBWN-VY4E' │ 'PAID'  │ 'MARKED_AS_PAID' │ '2026-10-22' │ 0                          │ '2026-10-20' │ 'created → sent → payment recorded' │
+│ 4       │ 'TR-QNEP1-INV-5' │ 'INV2-WQG6-U8YU-N8MX-LC9K' │ 'SENT'  │ 'UNPAID'         │ '2026-11-16' │ 0                          │ ''           │ 'created → sent'                    │
+└─────────┴──────────────────┴────────────────────────────┴─────────┴──────────────────┴──────────────┴────────────────────────────┴──────────────┴─────────────────────────────────────┘
+PayPal app: APP-80W284485P519543T — PayPal's default PUBLIC sandbox credentials: a shared app, other people can see these invoices
+Overdue is derived from due_date and the demo clock (TRANCHE_TODAY, default 2026-11-03); PayPal has no OVERDUE status.
+PayPal requests sent: 20
+Next: TRANCHE_PAYPAL=sandbox npm start

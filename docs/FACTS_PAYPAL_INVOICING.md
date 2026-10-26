@@ -184,6 +184,7 @@ payment through the Invoicing API ("Record bank transfer")." Tranche itself neve
 - `PARTIALLY_PAID` / `PAYMENT_PENDING` produced by the real sandbox (only via the stub).
 - A real PayPal-wallet payment by a sandbox buyer (needs a browser; not done).
 - Webhooks (not used; polling only).
+- The "only 2 reminders in a day" limit (INV:480) was not hit on purpose; the app enforces its own limit of 2 per invoice per day. Whether PayPal delivered the reminder e-mail (the 204 has no body).
 - Whether the public default credentials stay available and unchanged (PayPal can rotate them at any time).
 
 ### 9. Real-sandbox answers (2026-10-26, api-m.sandbox.paypal.com, app APP-80W284485P519543T)
@@ -198,7 +199,9 @@ fake recipient `probe@example.com`), `artifacts/sandbox/search-shape-2026-10-26.
 | Duplicate `invoice_number`? | **Rejected:** `422 DUPLICATE_INVOICE_NUMBER [/detail/invoice_number]: Invoice number is duplicate. (PayPal-Debug-Id f149106fa06b9)` |
 | `search_data.invoice_number` exact or partial? | **Prefix (starts-with):** full number → `total_items: 1`; prefix only (`TRP-9112L-`) → `total_items: 1`; a middle substring → `total_items: 0`. |
 | Status after share-link `send` (`send_to_recipient: false`)? | **`UNPAID`** (`"status after send": {"status": "UNPAID"}`) |
-| `remind` on that invoice? | Accepted (`ok`). |
+| `remind` on that invoice? | **204**, probe 12:45:55Z (ledger: `POST …/INV2-YS7N-Z2V4-T2YJ-NW6Y/remind` → `"status":204`, PayPal-Debug-Id `f683965fb4d40`). |
+| `remind` through the app (agent card → owner clicks *Send PayPal reminder*)? | **204, invoice stays `UNPAID`.** `npm run test:sandbox-remind`, 2026-10-26 14:15:43Z, `TR-QNEP1-INV-5` (`INV2-WQG6-U8YU-N8MX-LC9K`, due 16 Nov, so not overdue): ledger `POST /v2/invoicing/invoices/INV2-WQG6-U8YU-N8MX-LC9K/remind` → `"status":204`, PayPal-Debug-Id **`f222734b2490c`**; the GET right after → 200 (`f5458534c7966`), `status_after_from_paypal: "UNPAID"`; audit `paypal.invoice.remind` with `mode: "sandbox"`, `notification: {"send_to_recipient": true, "send_to_invoicer": false}` (`artifacts/sandbox/sandbox-remind-flow.json`, screenshot `S7-real-sandbox-reminder-sent.png`). The 204 has no body, so whether PayPal actually e-mailed the fake `@example.com` recipient is not visible to us. |
+| Order of `search-invoices` results? | **Newest first:** every prefix in `artifacts/sandbox/leftovers-2026-10-26.txt` lists INV-5, INV-4, INV-2, INV-1. The board therefore sorts the chips itself (`byInvoiceNumber`, `src/server/board.ts`; test `test/unit/board.test.ts`). |
 | Future `payment_date` on `/payments`? | **Accepted:** dated 2026-11-03 on 2026-10-26 → `"payment_id": "EXTR-8FG253960X465120G"` |
 | Status after recording a full external payment? | **`MARKED_AS_PAID`**, transaction `{"payment_date": "2026-11-03", "method": "BANK_TRANSFER", "type": "EXTERNAL"}` |
 | Cancel a paid invoice? | **Rejected:** `422 CANNOT_CANCEL_PAID_INVOICE [invoiceId]: Cannot cancel a paid or partially paid invoice. (PayPal-Debug-Id f893957abbd7d)` — paid demo invoices therefore stay in the shared app. |

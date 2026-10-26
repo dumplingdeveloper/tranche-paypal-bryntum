@@ -27,6 +27,7 @@
     "test:e2e": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/e2e/*.e2e.ts",
     "test:live": "TRANCHE_LIVE=1 TRANCHE_SHOT_DIR=artifacts/screenshots/live TRANCHE_EVIDENCE_DIR=artifacts/live EXPECTED_GITHUB_LOGIN=${EXPECTED_GITHUB_LOGIN:-yuxinshiu63} node --disable-warning=ExperimentalWarning --test --test-timeout=900000 test/live/*.live.ts",
     "test:sandbox-live": "LIVE_PAYPAL=1 TRANCHE_PAYPAL_CALL_LOG=${TRANCHE_PAYPAL_CALL_LOG:-artifacts/sandbox/paypal-calls.jsonl} TRANCHE_SHOT_DIR=artifacts/screenshots/sandbox TRANCHE_EVIDENCE_DIR=artifacts/sandbox node --disable-warning=ExperimentalWarning --test --test-timeout=600000 test/sandbox-live/*.sandbox.ts",
+    "test:sandbox-remind": "LIVE_PAYPAL_REMIND=1 TRANCHE_PAYPAL_CALL_LOG=${TRANCHE_PAYPAL_CALL_LOG:-artifacts/sandbox/paypal-calls.jsonl} TRANCHE_SHOT_DIR=artifacts/screenshots/sandbox TRANCHE_EVIDENCE_DIR=artifacts/sandbox node --disable-warning=ExperimentalWarning --test --test-timeout=300000 test/sandbox-live/remind.sandbox.ts",
     "probe:trial-clock": "node --disable-warning=ExperimentalWarning scripts/trial-clock-probe.ts",
     "test:byok": "node --disable-warning=ExperimentalWarning --test test/byok/*.local.ts",
     "sandbox:seed": "node --disable-warning=ExperimentalWarning scripts/sandbox-seed.ts",
