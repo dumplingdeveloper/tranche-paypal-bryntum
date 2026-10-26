@@ -15,6 +15,7 @@ try {
   for (const s of steps) console.log(`${s.ok ? 'ok  ' : 'FAIL'} ${s.step}: ${s.detail}`);
   const failed = steps.filter((s) => !s.ok).length;
   console.log(failed ? `sandbox:smoke: ${failed} check(s) failed` : `sandbox:smoke: all ${steps.length} checks passed`);
+  console.log(`PayPal app: ${client.appId || 'unknown'}; prefix ${client.prefix}; PayPal requests sent: ${client.requestCount}`);
   process.exit(failed ? 1 : 0);
 } catch (err) {
   console.error(`sandbox:smoke failed: ${client.mask((err as Error).message)}`);

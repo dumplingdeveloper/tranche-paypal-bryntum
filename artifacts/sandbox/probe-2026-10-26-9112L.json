@@ -1,0 +1,131 @@
+{
+  "at": "2026-10-26T12:45:58.564Z",
+  "base_url": "https://api-m.sandbox.paypal.com",
+  "credentials_source": "file",
+  "prefix": "TRP-9112L-",
+  "real_today": "2026-10-26",
+  "requests_sent": 13,
+  "steps": [
+    {
+      "step": "create draft with PAST due_date",
+      "ok": true,
+      "answer": {
+        "id": "INV2-YS7N-Z2V4-T2YJ-NW6Y",
+        "status": "DRAFT",
+        "sent_due_date": "2026-10-17",
+        "returned_due_date": "2026-10-17",
+        "returned_term_type": "DUE_ON_DATE_SPECIFIED",
+        "representation_returned": true
+      }
+    },
+    {
+      "step": "create draft with the SAME invoice_number again",
+      "ok": false,
+      "answer": null,
+      "error": {
+        "status": 422,
+        "issue": "DUPLICATE_INVOICE_NUMBER",
+        "message": "PayPal POST /v2/invoicing/invoices → 422 DUPLICATE_INVOICE_NUMBER [/detail/invoice_number]: Invoice number is duplicate. (PayPal-Debug-Id f149106fa06b9)",
+        "debug_id": "f149106fa06b9"
+      }
+    },
+    {
+      "step": "search invoice_number = full number",
+      "ok": true,
+      "answer": {
+        "total_items": 1,
+        "total_pages": 1,
+        "numbers": [
+          "TRP-9112L-PAST"
+        ]
+      }
+    },
+    {
+      "step": "search invoice_number = prefix only",
+      "ok": true,
+      "answer": {
+        "total_items": 1,
+        "total_pages": 1,
+        "numbers": [
+          "TRP-9112L-PAST"
+        ]
+      }
+    },
+    {
+      "step": "search invoice_number = middle substring",
+      "ok": true,
+      "answer": {
+        "total_items": 0,
+        "total_pages": 0,
+        "numbers": []
+      }
+    },
+    {
+      "step": "send (send_to_recipient=false, send_to_invoicer=false)",
+      "ok": true,
+      "answer": "ok"
+    },
+    {
+      "step": "status after send",
+      "ok": true,
+      "answer": {
+        "status": "UNPAID",
+        "due_date": "2026-10-17"
+      }
+    },
+    {
+      "step": "remind (send_to_recipient=true) on the sent invoice",
+      "ok": true,
+      "answer": "ok"
+    },
+    {
+      "step": "record external payment dated in the FUTURE (2026-11-03)",
+      "ok": true,
+      "answer": {
+        "payment_id": "EXTR-8FG253960X465120G"
+      }
+    },
+    {
+      "step": "status after record-payment",
+      "ok": true,
+      "answer": {
+        "status": "MARKED_AS_PAID",
+        "paid": {
+          "currency_code": "EUR",
+          "value": "10.00"
+        },
+        "transactions": [
+          {
+            "payment_id": "EXTR-8FG253960X465120G",
+            "payment_date": "2026-11-03",
+            "method": "BANK_TRANSFER",
+            "type": "EXTERNAL",
+            "amount": {
+              "currency_code": "EUR",
+              "value": "10.00"
+            },
+            "note": "Tranche probe"
+          }
+        ]
+      }
+    },
+    {
+      "step": "cancel the paid probe invoice (cleanup attempt)",
+      "ok": false,
+      "answer": null,
+      "error": {
+        "status": 422,
+        "issue": "CANNOT_CANCEL_PAID_INVOICE",
+        "message": "PayPal POST /v2/invoicing/invoices/INV2-YS7N-Z2V4-T2YJ-NW6Y/cancel → 422 CANNOT_CANCEL_PAID_INVOICE [invoiceId]: Cannot cancel a paid or partially paid invoice. (PayPal-Debug-Id f893957abbd7d)",
+        "debug_id": "f893957abbd7d"
+      }
+    },
+    {
+      "step": "status after cancel attempt",
+      "ok": true,
+      "answer": {
+        "status": "MARKED_AS_PAID"
+      }
+    }
+  ]
+}

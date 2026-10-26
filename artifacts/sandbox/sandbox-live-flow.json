@@ -1,0 +1,157 @@
+{
+  "written_by": "test",
+  "at": "2026-10-26T13:10:47.383Z",
+  "paypal": {
+    "base_url": "https://api-m.sandbox.paypal.com",
+    "app_id": "APP-80W284485P519543T",
+    "public_default_credentials": true,
+    "credentials_source": "file",
+    "prefix": "TR-E50AC-"
+  },
+  "seeded": [
+    {
+      "number": "TR-E50AC-INV-1",
+      "id": "INV2-XRFP-2TGF-T8TL-2ZRY",
+      "status": "MARKED_AS_PAID",
+      "due": "2026-10-05",
+      "actions": [
+        "created",
+        "sent",
+        "payment recorded"
+      ]
+    },
+    {
+      "number": "TR-E50AC-INV-2",
+      "id": "INV2-L6BA-BGGB-CA3Q-RBME",
+      "status": "UNPAID",
+      "due": "2026-10-25",
+      "actions": [
+        "created",
+        "sent"
+      ]
+    },
+    {
+      "number": "TR-E50AC-INV-3",
+      "id": "INV2-BWFA-Z6G7-82VQ-YXWE",
+      "status": "DRAFT",
+      "due": "2026-11-22",
+      "actions": [
+        "created"
+      ]
+    },
+    {
+      "number": "TR-E50AC-INV-4",
+      "id": "INV2-TJE2-PJ5B-2LDJ-KBSN",
+      "status": "MARKED_AS_PAID",
+      "due": "2026-10-22",
+      "actions": [
+        "created",
+        "sent",
+        "payment recorded"
+      ]
+    },
+    {
+      "number": "TR-E50AC-INV-5",
+      "id": "INV2-9DFU-AKD3-UEHS-WQQW",
+      "status": "UNPAID",
+      "due": "2026-11-16",
+      "actions": [
+        "created",
+        "sent"
+      ]
+    }
+  ],
+  "inv2_from_paypal": {
+    "id": "INV2-L6BA-BGGB-CA3Q-RBME",
+    "status": "MARKED_AS_PAID",
+    "payment": {
+      "type": "EXTERNAL",
+      "method": "BANK_TRANSFER",
+      "payment_date": "2026-11-03",
+      "amount": {
+        "currency_code": "EUR",
+        "value": "4800.00"
+      }
+    }
+  },
+  "confirmations": [
+    {
+      "id": "cf_0001",
+      "kind": "apply_schedule",
+      "status": "undone",
+      "preview_id": "pv_shift_INV-2_2026-11-10"
+    },
+    {
+      "id": "cf_0002",
+      "kind": "send_reminder",
+      "status": "stale"
+    },
+    {
+      "id": "cf_0003",
+      "kind": "apply_schedule",
+      "status": "approved",
+      "preview_id": "pv_release_INV-2_2026-11-03"
+    }
+  ],
+  "engine_after_release": {
+    "acme-t2": {
+      "start": "2026-11-03",
+      "end": "2026-11-03"
+    },
+    "acme-build": {
+      "start": "2026-11-03",
+      "end": "2026-11-24"
+    },
+    "acme-t3": {
+      "start": "2026-11-24",
+      "end": "2026-11-24"
+    },
+    "acme-launch": {
+      "start": "2026-11-24",
+      "end": "2026-11-29"
+    }
+  },
+  "audit_actions": [
+    "agent.mode",
+    "paypal.event",
+    "engine.verified",
+    "agent.tool_call",
+    "agent.tool_call",
+    "confirmation.requested",
+    "agent.tool_call",
+    "agent.tool_call",
+    "confirmation.requested",
+    "agent.tool_call",
+    "agent.turn",
+    "schedule.applied",
+    "confirmation.approved",
+    "engine.verified",
+    "schedule.undone",
+    "confirmation.undone",
+    "engine.verified",
+    "sandbox.demo_control",
+    "confirmation.marked_stale",
+    "paypal.event",
+    "agent.tool_call",
+    "agent.tool_call",
+    "confirmation.requested",
+    "agent.tool_call",
+    "agent.turn",
+    "schedule.applied",
+    "confirmation.approved",
+    "engine.verified"
+  ],
+  "paypal_requests": {
+    "seed": 21,
+    "record_payment_and_poll": 4,
+    "total_in_test_before_cleanup": 28
+  },
+  "screenshots": [
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S1-real-sandbox-overdue.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S2-real-sandbox-preview.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S3-real-sandbox-applied.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S4-real-sandbox-undone.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S5-real-sandbox-paid-stale-reminder.png",
+    "/Users/shiyx/Downloads/claude_folder/hackathon_paypal_bryntum/artifacts/screenshots/sandbox/S6-real-sandbox-released.png"
+  ]
+}

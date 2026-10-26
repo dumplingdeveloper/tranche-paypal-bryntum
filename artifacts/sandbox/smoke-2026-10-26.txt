@@ -1,0 +1,9 @@
+Smoke test against https://api-m.sandbox.paypal.com (credentials from file; values not shown)
+PayPal GET /v2/invoicing/invoices/INV2-CLJT-5ETJ-8PQE-69Q3 → 404 RESOURCE_NOT_FOUND: The specified resource does not exist. (PayPal-Debug-Id f2468388053ec)
+ok   oauth token + GET /v2/invoicing/invoices: 0 TRANCHE-* invoice(s) on page 1
+ok   POST /v2/invoicing/search-invoices: 0 TRANCHE-* invoice(s); demo set missing INV-1, INV-2, INV-3, INV-4, INV-5 (run npm run sandbox:seed)
+ok   POST /v2/invoicing/invoices (draft): INV2-CLJT-5ETJ-8PQE-69Q3 DRAFT
+ok   GET /v2/invoicing/invoices/{id}: SMOKE-MVP98YVD due 2026-11-09
+ok   DELETE /v2/invoicing/invoices/{id} (cleanup): INV2-CLJT-5ETJ-8PQE-69Q3 deleted (GET now 404)
+sandbox:smoke: all 5 checks passed
+PayPal app: APP-80W284485P519543T; prefix TRANCHE-; PayPal requests sent: 7

@@ -46,6 +46,8 @@ export class PaymentWatcher {
   private timer?: ReturnType<typeof setInterval>;
   private polling?: Promise<PaymentEvent[]>;
   invoices: PayPalInvoice[] = [];
+  /** Ids seen before but absent from the latest search (e.g. a draft deleted in PayPal); their last copy is kept. */
+  missing: string[] = [];
   readonly history: PaymentEvent[] = [];
 
   private client: InvoicingClient;
@@ -84,9 +86,13 @@ export class PaymentWatcher {
       if (overdue && !this.overdueSeen.has(inv.id)) { this.overdueSeen.add(inv.id); events.push(this.make(inv, 'TRANCHE.INVOICE.OVERDUE', initial)); }
       if (!overdue) this.overdueSeen.delete(inv.id);
     }
-    this.invoices = invoices;
+    // An invoice that vanishes from PayPal keeps its last known copy, so the plan (which depends on it) stays computable.
+    const seen = new Set(invoices.map((i) => i.id));
+    const kept = this.invoices.filter((i) => !seen.has(i.id));
+    this.missing = kept.map((i) => i.id);
+    this.invoices = [...invoices, ...kept];
     this.history.push(...events);
-    this.opts.onEvents?.(events, invoices);
+    this.opts.onEvents?.(events, this.invoices);
     return events;
   }
 

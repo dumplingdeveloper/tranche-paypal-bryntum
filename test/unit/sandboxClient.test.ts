@@ -7,7 +7,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { InvoicingError } from '../../src/paypal/invoicing.ts';
-import { SandboxInvoicingClient, invoicePrefixFromEnv, loadSandboxCredentials, sandboxClientFromEnv, toDomainInvoice, toDomainStatus } from '../../src/paypal/sandboxClient.ts';
+import { SandboxInvoicingClient, invoicePrefixFromEnv, newDemoPrefix, writeSandboxState, loadSandboxCredentials, sandboxClientFromEnv, toDomainInvoice, toDomainStatus } from '../../src/paypal/sandboxClient.ts';
 import { missingDemoInvoices, seedSandbox, smokeSandbox } from '../../src/paypal/sandboxSeed.ts';
 import { daysOverdue, isPaid } from '../../src/domain/schedule.ts';
 import { createTranche } from '../../src/server/app.ts';
@@ -98,7 +98,7 @@ test('send / remind / record payment / refund / cancel / delete: method, path, b
   const a = await client.createDraft(draft('INV-2'));
   await client.sendInvoice(a.id, { send_to_recipient: false, send_to_invoicer: false });
   assert.deepEqual(stub.calls('POST', `/v2/invoicing/invoices/${a.id}/send`)[0].json, { send_to_recipient: false, send_to_invoicer: false });
-  assert.equal((await client.getInvoice(a.id)).status, 'SENT');
+  assert.equal((await client.getInvoice(a.id)).status, 'UNPAID'); // share-link send, as the real sandbox answered
 
   await client.remindInvoice(a.id);
   assert.deepEqual(stub.calls('POST', `/v2/invoicing/invoices/${a.id}/remind`)[0].json, { send_to_recipient: true });
@@ -112,7 +112,8 @@ test('send / remind / record payment / refund / cancel / delete: method, path, b
   assert.equal(isPaid(partial), false);
   await client.recordPayment(a.id, { method: 'BANK_TRANSFER', payment_date: '2026-11-02' });
   const paid = await client.getInvoice(a.id);
-  assert.equal(paid.status, 'PAID');
+  assert.equal(paid.status, 'MARKED_AS_PAID'); // recorded external payment, as the real sandbox answered
+  assert.equal(isPaid(paid), true);
   assert.deepEqual(paid.payments?.transactions.map((t) => [t.payment_date, t.method, t.type]), [['2026-11-01', 'BANK_TRANSFER', 'EXTERNAL'], ['2026-11-02', 'BANK_TRANSFER', 'EXTERNAL']]);
   assert.equal(stub.calls('POST', `/v2/invoicing/invoices/${a.id}/payments`)[0].json.method, 'BANK_TRANSFER');
 
@@ -140,17 +141,19 @@ test('getInvoice also resolves a domain number (INV-2) through search', async ()
   await assert.rejects(client.getInvoice('INV-7'), (e: InvoicingError) => e.status === 404);
 });
 
-test('search: paginates (page_size 100) and keeps only TRANCHE- invoices', async () => {
+test('search: scoped to our prefix (search_data.invoice_number is a prefix match), paginates (page_size 100)', async () => {
   const { stub, client } = await setup();
-  for (let i = 0; i < 130; i++) stub.put({ id: `INV2-OTHR-0000-0000-${String(i).padStart(4, '0')}`, status: 'SENT', detail: { invoice_number: `OTHER-${i}`, currency_code: 'EUR', invoice_date: '2026-10-01' }, amount: { currency_code: 'EUR', value: '1.00' } });
+  for (let i = 0; i < 5; i++) stub.put({ id: `INV2-OTHR-0000-0000-${String(i).padStart(4, '0')}`, status: 'SENT', detail: { invoice_number: `OTHER-${i}`, currency_code: 'EUR', invoice_date: '2026-10-01' }, amount: { currency_code: 'EUR', value: '1.00' } });
+  for (let i = 0; i < 130; i++) stub.put({ id: `INV2-MINE-0000-0000-${String(i).padStart(4, '0')}`, status: 'UNPAID', detail: { invoice_number: `TRANCHE-OLD-${i}`, currency_code: 'EUR', invoice_date: '2026-10-01' }, amount: { currency_code: 'EUR', value: '1.00' } });
   await client.createDraft(draft('INV-2'));
   const found = await client.searchInvoices();
-  assert.deepEqual(found.map((i) => i.detail.invoice_number), ['INV-2']);
+  assert.equal(found.length, 131);
+  assert.ok(found.every((i) => !i.detail.invoice_number.startsWith('OTHER')));
   const pages = stub.calls('POST', '/v2/invoicing/search-invoices');
-  assert.deepEqual(pages.map((p) => [p.query.get('page'), p.query.get('page_size')]), [['1', '100'], ['2', '100']]);
+  assert.deepEqual(pages.map((p) => [p.query.get('page'), p.query.get('page_size'), p.json.invoice_number]), [['1', '100', 'TRANCHE-'], ['2', '100', 'TRANCHE-']]);
   const listed = await client.listInvoices();
   assert.equal(listed.total_pages, 2);
-  assert.deepEqual(listed.invoices.map((i) => i.detail.invoice_number), []); // INV-2 is item 131, on page 2
+  assert.equal(listed.invoices.length, 95); // page 1 of the unfiltered list: 5 OTHER-* dropped client-side
 });
 
 test('retry: 429 is retried even for POST, honouring Retry-After', async () => {
@@ -186,8 +189,8 @@ test('errors: PayPal error body → InvoicingError with issue and PayPal-Debug-I
   await client.createDraft(draft('INV-2'));
   await assert.rejects(client.createDraft(draft('INV-2')), (e: any) => {
     assert.equal(e.status, 422);
-    assert.equal(e.issue, 'STUB_DUPLICATE_INVOICE_NUMBER');
-    assert.match(e.message, /POST \/v2\/invoicing\/invoices → 422 STUB_DUPLICATE_INVOICE_NUMBER: Invoice number already exists \(PayPal-Debug-Id stubdebug\d+\)/);
+    assert.equal(e.issue, 'DUPLICATE_INVOICE_NUMBER');
+    assert.match(e.message, /POST \/v2\/invoicing\/invoices → 422 DUPLICATE_INVOICE_NUMBER \[\/detail\/invoice_number\]: Invoice number is duplicate\. \(PayPal-Debug-Id stubdebug\d+\)/);
     assert.match(e.debugId, /^stubdebug\d+$/);
     return true;
   });
@@ -220,8 +223,15 @@ test('guards: no credentials → constructor refuses; only the sandbox host (or 
   assert.throws(() => new SandboxInvoicingClient({ credentials: { clientId: '', clientSecret: '' } }), /NO CREDENTIALS/);
   assert.throws(() => new SandboxInvoicingClient({ credentials: { clientId: ID, clientSecret: SECRET }, baseUrl: 'https://api-m.paypal.com' }), /Refusing PayPal base URL/);
   assert.equal(new SandboxInvoicingClient({ credentials: { clientId: ID, clientSecret: SECRET } }).baseUrl, 'https://api-m.sandbox.paypal.com');
-  assert.equal(invoicePrefixFromEnv({}), 'TRANCHE-');
-  assert.equal(invoicePrefixFromEnv({ TRANCHE_INVOICE_PREFIX: 'tr2-' }), 'TR2-');
+  const noState = { TRANCHE_SANDBOX_STATE: join(tmpdir(), 'tranche-no-such-state.json') };
+  assert.equal(invoicePrefixFromEnv(noState), 'TRANCHE-');
+  assert.equal(invoicePrefixFromEnv({ ...noState, TRANCHE_INVOICE_PREFIX: 'tr2-' }), 'TR2-');
+  const stateFile = join(mkdtempSync(join(tmpdir(), 'tranche-state-')), 'sandbox-state.json');
+  writeSandboxState({ prefix: 'TR-AB12C-', created_at: '2026-10-26T00:00:00Z', base_url: 'https://api-m.sandbox.paypal.com' }, stateFile);
+  assert.equal(invoicePrefixFromEnv({ TRANCHE_SANDBOX_STATE: stateFile }), 'TR-AB12C-');
+  assert.equal(invoicePrefixFromEnv({ TRANCHE_SANDBOX_STATE: stateFile, TRANCHE_INVOICE_PREFIX: 'TR2-' }), 'TR2-');
+  assert.match(newDemoPrefix(), /^TR-[0-9A-Z]{5}-$/);
+  assert.notEqual(newDemoPrefix(() => 0.1), newDemoPrefix(() => 0.9));
   assert.throws(() => invoicePrefixFromEnv({ TRANCHE_INVOICE_PREFIX: 'WAY-TOO-LONG-PREFIX' }), /1-12/);
 });
 
@@ -294,11 +304,11 @@ test('seed: reaches the demo states, is idempotent, and the demo clock makes INV
   const { stub, client } = await setup({ today: '2026-11-03' });
   const rows = await seedSandbox(client, { demoToday: '2026-11-03', realToday: '2026-11-03' });
   assert.deepEqual(rows.map((r) => [r.invoice_number, r.status, r.due_date, r.days_overdue_on_demo_clock, r.paid_date ?? null, r.actions.join('>')]), [
-    ['INV-1', 'PAID', '2026-10-05', 0, '2026-10-04', 'created>sent>payment recorded'],
-    ['INV-2', 'SENT', '2026-10-25', 9, null, 'created>sent'],
+    ['INV-1', 'MARKED_AS_PAID', '2026-10-05', 0, '2026-10-04', 'created>sent>payment recorded'],
+    ['INV-2', 'UNPAID', '2026-10-25', 9, null, 'created>sent'],
     ['INV-3', 'DRAFT', '2026-11-22', 0, null, 'created'],
-    ['INV-4', 'PAID', '2026-10-22', 0, '2026-10-20', 'created>sent>payment recorded'],
-    ['INV-5', 'SENT', '2026-11-16', 0, null, 'created>sent'],
+    ['INV-4', 'MARKED_AS_PAID', '2026-10-22', 0, '2026-10-20', 'created>sent>payment recorded'],
+    ['INV-5', 'UNPAID', '2026-11-16', 0, null, 'created>sent'],
   ]);
   // INV-3's issue date (2026-11-08) is after real today, so it is clamped (INV:340 would otherwise schedule it).
   assert.equal(stub.calls('POST', '/v2/invoicing/invoices')[2].json.detail.invoice_date, '2026-11-03');
@@ -332,7 +342,7 @@ test('seed: drift (e.g. INV-2 already paid during a demo) is reported and left a
   await client.recordPayment(inv2.id, { method: 'BANK_TRANSFER', payment_date: '2026-11-03' });
   const n = client.calls.length;
   const rows = await seedSandbox(client, { demoToday: '2026-11-03', realToday: '2026-11-03' });
-  assert.match(rows.find((r) => r.invoice_number === 'INV-2')!.note || '', /^DRIFT: sandbox status PAID, demo wants SENT/);
+  assert.match(rows.find((r) => r.invoice_number === 'INV-2')!.note || '', /^DRIFT: sandbox status MARKED_AS_PAID, demo wants SENT/);
   assert.equal(client.calls.length, n);
 });
 
@@ -365,7 +375,7 @@ test('app in sandbox mode: badge mode, polling watcher sees PayPal changes, paye
     const state = async () => (await (await fetch(`${base}/api/state`)).json()) as any;
     let s = await state();
     assert.equal(s.modes.paypal, 'sandbox');
-    assert.deepEqual(s.invoices.map((i: any) => [i.invoice_number, i.status]), [['INV-1', 'PAID'], ['INV-2', 'SENT'], ['INV-3', 'DRAFT'], ['INV-4', 'PAID'], ['INV-5', 'SENT']]);
+    assert.deepEqual(s.invoices.map((i: any) => [i.invoice_number, i.status]), [['INV-1', 'MARKED_AS_PAID'], ['INV-2', 'UNPAID'], ['INV-3', 'DRAFT'], ['INV-4', 'MARKED_AS_PAID'], ['INV-5', 'UNPAID']]);
     const pay = await post('/api/mock/simulate', { action: 'payer_pays', invoice_number: 'INV-2' });
     assert.equal(pay.status, 409);
     assert.equal(((await pay.json()) as any).error.code, 'NEEDS_BROWSER_PAYER');
@@ -377,7 +387,7 @@ test('app in sandbox mode: badge mode, polling watcher sees PayPal changes, paye
     assert.ok(stub.calls('POST', '/v2/invoicing/search-invoices').length > before);
     assert.equal(stub.calls('POST', /\/payments$/).at(-1)!.json.method, 'BANK_TRANSFER');
     s = await state();
-    assert.equal(s.invoices.find((i: any) => i.invoice_number === 'INV-2').status, 'PAID');
+    assert.equal(s.invoices.find((i: any) => i.invoice_number === 'INV-2').status, 'MARKED_AS_PAID');
     assert.equal(s.invoices.find((i: any) => i.invoice_number === 'INV-5').status, 'PAYMENT_PENDING');
     const audit = s.audit.find((a: any) => a.action === 'sandbox.demo_control');
     assert.equal(audit.details.action, 'record_external_payment');
@@ -385,4 +395,54 @@ test('app in sandbox mode: badge mode, polling watcher sees PayPal changes, paye
     assert.ok(s.events.some((e: any) => e.invoice_number === 'INV-2' && e.event_type === 'INVOICING.INVOICE.PAID' && e.source === 'sandbox-poll'));
     assert.deepEqual(s.paypal_calls.at(-1).op, 'record_payment');
   } finally { await app.close(); }
+});
+
+test('search items have no payment transactions (real sandbox shape): a paid invoice is read once with GET, cached until its status changes', async () => {
+  const { stub, client } = await setup();
+  const inv = await client.createDraft(draft('INV-9'));
+  await client.sendInvoice(inv.id, { send_to_recipient: false });
+  await client.recordPayment(inv.id, { payment_date: '2026-11-03', method: 'BANK_TRANSFER' });
+  // The stub's search strips transactions like the real API does (artifacts/sandbox/search-shape-2026-10-26.json).
+  const searchResp = await (await fetch(`${stub.baseUrl}/v2/invoicing/search-invoices`, { method: 'POST', headers: { authorization: stub.requests.find((r) => r.path !== '/v1/oauth2/token')!.headers.authorization as string, 'content-type': 'application/json' }, body: '{}' })).json();
+  assert.deepEqual(Object.keys(searchResp.items[0].payments), ['paid_amount']);
+  const gets = () => stub.calls('GET', `/v2/invoicing/invoices/${inv.id}`).length;
+  const first = (await client.searchInvoices()).find((i) => i.id === inv.id)!;
+  assert.equal(first.status, 'MARKED_AS_PAID');
+  assert.equal(first.payments?.transactions.at(-1)?.payment_date, '2026-11-03');
+  assert.equal(gets(), 1);
+  await client.searchInvoices();
+  assert.equal(gets(), 1, 'cached while status/amount are unchanged');
+  await client.recordRefund(inv.id, { refund_date: '2026-11-03', method: 'BANK_TRANSFER' });
+  const refunded = (await client.searchInvoices()).find((i) => i.id === inv.id)!;
+  assert.equal(gets(), 2, 'status changed → read again');
+  assert.equal(refunded.refunds?.transactions.at(-1)?.refund_date, '2026-11-03');
+});
+
+test('a draft deleted directly in PayPal: the next poll keeps its last copy (plan stays computable) and audits paypal.invoice_missing once', async () => {
+  const { client } = await setup();
+  const rows = await seedSandbox(client, { demoToday: '2026-11-03', realToday: '2026-11-03' });
+  const app = await createTranche({ today: '2026-11-03', invoicing: client, realToday: () => '2026-11-03', agent: (h) => new ScriptedAgent(h) });
+  try {
+    const before = app.snapshot().schedule;
+    await client.deleteDraft(rows.find((r) => r.invoice_number === 'INV-3')!.id);
+    await app.watcher.poll();
+    await app.watcher.poll();
+    const s = app.snapshot();
+    assert.deepEqual(s.schedule, before);
+    assert.equal(s.invoices.find((i: any) => i.invoice_number === 'INV-3')?.status, 'DRAFT');
+    assert.deepEqual(s.audit.filter((a: any) => a.action === 'paypal.invoice_missing').map((a: any) => a.details.invoice_number), ['INV-3']);
+  } finally { await app.close(); }
+});
+
+test('call ledger (TRANCHE_PAYPAL_CALL_LOG): one JSON line per HTTP request, no headers/bodies/secrets, query string dropped', async () => {
+  const file = join(mkdtempSync(join(tmpdir(), 'tranche-ledger-')), 'calls.jsonl');
+  const { client } = await setup({}, { callLog: file });
+  await client.createDraft(draft('INV-7'));
+  await client.searchInvoices();
+  const text = readFileSync(file, 'utf8');
+  const lines = text.trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(lines.length, client.requestCount);
+  assert.deepEqual(lines.map((l) => `${l.method} ${l.path} ${l.status}`), ['POST /v1/oauth2/token 200', 'POST /v2/invoicing/invoices 201', 'POST /v2/invoicing/search-invoices 200']);
+  for (const l of lines) assert.deepEqual(Object.keys(l).filter((k) => !['at', 'host', 'method', 'path', 'status', 'ms', 'debug_id', 'n'].includes(k)), []);
+  for (const secret of [ID, SECRET, TOKEN, Buffer.from(`${ID}:${SECRET}`).toString('base64'), 'accounts@acme-coffee.example']) assert.ok(!text.includes(secret), 'ledger leaks a value');
 });

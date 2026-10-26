@@ -37,7 +37,7 @@ test('sandbox mode (local stub API): badge says SANDBOX · local stub, plan come
     await page.selectOption('#sim-invoice', 'INV-2');
     const before = stub.calls('POST', /\/payments$/).length;
     await page.click('button[data-sim="record_external_payment"]');
-    s = await waitFor(async () => { const x = await apiState(base); return x.invoices.find((i: any) => i.invoice_number === 'INV-2').status === 'PAID' && x; }, 20_000, 'INV-2 PAID via stub');
+    s = await waitFor(async () => { const x = await apiState(base); return x.invoices.find((i: any) => i.invoice_number === 'INV-2').status === 'MARKED_AS_PAID' && x; }, 20_000, 'INV-2 MARKED_AS_PAID via stub');
     const payments = stub.calls('POST', /\/payments$/).slice(before);
     assert.equal(payments.length, 1);
     assert.equal(payments[0].json.method, 'BANK_TRANSFER');

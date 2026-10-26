@@ -2,9 +2,10 @@
 // Endpoint and field names come from PayPal's OpenAPI spec invoicing_v2.json ("INV:<line>") and the OAuth docs;
 // see docs/FACTS_PAYPAL_INVOICING.md §"Sandbox client". Status: unit-tested against a local stub server only; it has
 // NOT been run against the real sandbox yet (no credentials).
-import { readFileSync, statSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { InvoiceStatus, Money, PayPalInvoice } from '../domain/types.ts';
 import { InvoicingError, type InvoicingCall, type InvoiceNotification, type InvoiceSearch, type InvoicingClient, type PaymentDetail, type RefundDetail } from './invoicing.ts';
 
@@ -14,6 +15,30 @@ export const CREDENTIALS_FILE = join(homedir(), '.config', 'tillwise', 'paypal-s
 export const INVOICE_PREFIX = 'TRANCHE-';
 /** `detail.reference` tag (INV:3116, max 120 chars) written by `npm run sandbox:seed`. */
 export const SEED_REFERENCE = 'tranche-demo/v1';
+/**
+ * app_id of PayPal's default PUBLIC sandbox credential set (collection variables client_id / client_secret in
+ * https://github.com/paypal/postman-collections Collections/PayPal_Public_APIs.json). The token response carries
+ * app_id, so Tranche can say on screen that this shared app is in use without ever storing the credentials.
+ */
+export const PUBLIC_DEFAULT_APP_ID = 'APP-80W284485P519543T';
+/** Where `npm run sandbox:seed` remembers the invoice-number prefix of this checkout's demo set (gitignored). */
+export const SANDBOX_STATE_FILE = resolve(dirname(fileURLToPath(import.meta.url)), '../../.tranche/sandbox-state.json');
+export type SandboxState = { prefix: string; created_at: string; base_url: string; app_id?: string };
+
+export function readSandboxState(file = SANDBOX_STATE_FILE): SandboxState | undefined {
+  try { const st = JSON.parse(readFileSync(file, 'utf8')); return typeof st?.prefix === 'string' ? st : undefined; } catch { return undefined; }
+}
+export function writeSandboxState(state: SandboxState, file = SANDBOX_STATE_FILE) {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
+}
+/** A fresh, unique prefix such as `TR-K3F9Q-`, so sets seeded in a shared sandbox app never collide. */
+export function newDemoPrefix(rand: () => number = Math.random) {
+  const abc = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  let tag = '';
+  for (let i = 0; i < 5; i++) tag += abc[Math.floor(rand() * abc.length)];
+  return `TR-${tag}-`;
+}
 
 export type SandboxCredentials = { clientId: string; clientSecret: string };
 export type CredentialLookup = { creds?: SandboxCredentials; source: 'env' | 'file' | 'env+file' | 'none'; file: string; warnings: string[] };
@@ -110,6 +135,8 @@ export type SandboxClientOptions = {
   log?: (line: string) => void;
   today?: () => string;
   maxRetries?: number;
+  /** Append one JSON line per HTTP request (method, path, status, PayPal-Debug-Id; never headers or bodies). */
+  callLog?: string;
   baseDelayMs?: number;
   sleep?: (ms: number) => Promise<void>;
   prefix?: string;
@@ -133,6 +160,11 @@ export class SandboxInvoicingClient implements InvoicingClient {
   private tokenPromise?: Promise<string>;
   // Every token this client has held, so an old token is still masked after a refresh.
   private seenTokens = new Set<string>();
+  /** HTTP requests this client sent to PayPal (token, reads, writes, retries), for the shared-app call budget. */
+  requestCount = 0;
+  /** `app_id` from the OAuth token response (not a secret); PUBLIC_DEFAULT_APP_ID means PayPal's shared public app. */
+  appId?: string;
+  private callLog?: string;
 
   constructor(o: SandboxClientOptions) {
     if (!o.credentials?.clientId || !o.credentials?.clientSecret) throw new InvoicingError(0, 'NO_CREDENTIALS', 'NO CREDENTIALS: PayPal sandbox client needs PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
@@ -149,6 +181,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
     this.baseDelayMs = o.baseDelayMs ?? 500;
     this.sleep = o.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.prefix = o.prefix ?? INVOICE_PREFIX;
+    this.callLog = o.callLog;
   }
 
   /** Replace any credential or token value in a string before it is logged or thrown. */
@@ -160,6 +193,12 @@ export class SandboxInvoicingClient implements InvoicingClient {
   }
 
   private log(line: string) { this.logLine(this.mask(line)); }
+
+  private logCall(method: string, path: string, res: Response | undefined, netErr: Error | undefined, startedAt = Date.now()) {
+    if (!this.callLog) return;
+    const line = { at: new Date().toISOString(), host: new URL(this.baseUrl).host, method, path: path.split('?')[0], status: res?.status ?? 0, ms: Date.now() - startedAt, debug_id: res?.headers.get('paypal-debug-id') || undefined, ...(netErr ? { error: this.mask(netErr.message) } : {}), n: this.requestCount };
+    try { appendFileSync(this.callLog, `${JSON.stringify(line)}\n`); } catch { /* the ledger is best effort */ }
+  }
 
   // OAuth2 client_credentials: POST /v1/oauth2/token (INV:2557 tokenUrl), HTTP Basic client_id:secret. Cached until
   // 60 s before `expires_in` runs out; concurrent callers share one request.
@@ -176,6 +215,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
         if (!body.access_token) throw new InvoicingError(502, 'TOKEN_MISSING', 'PayPal token response had no access_token');
         const ttl = Math.max(0, Number(body.expires_in || 0) - 60) * 1000;
         this.token = { value: String(body.access_token), expiresAt: Date.now() + ttl };
+        if (body.app_id) this.appId = String(body.app_id);
         this.seenTokens.add(this.token.value);
         return this.token.value;
       })().finally(() => { this.tokenPromise = undefined; });
@@ -188,9 +228,12 @@ export class SandboxInvoicingClient implements InvoicingClient {
     for (let attempt = 0; ; attempt++) {
       let res: Response | undefined;
       let netErr: Error | undefined;
+      const started = Date.now();
       try {
+        this.requestCount++;
         res = await this.fetchImpl(`${this.baseUrl}${path}`, { method, headers: init.headers, body: init.body });
       } catch (err) { netErr = err as Error; }
+      this.logCall(method, path, res, netErr, started);
       const status = res?.status ?? 0;
       if (res && res.ok) return res;
       const canRetry = (retryable || status === 429) && attempt < this.maxRetries && (netErr || RETRY_STATUS(status));
@@ -253,22 +296,51 @@ export class SandboxInvoicingClient implements InvoicingClient {
     return this.calls.filter((c) => c.op === 'remind' && c.invoice_id === invoiceId && c.at === day).length;
   }
 
-  /** POST /v2/invoicing/search-invoices (INV:1767, body search_data INV:6762), all pages; only TRANCHE- invoices. */
+  /** POST /v2/invoicing/search-invoices (INV:1767, body search_data INV:6762), all pages; only invoices with our prefix. */
   async searchInvoices(query: InvoiceSearch & { invoice_number?: string } = {}): Promise<PayPalInvoice[]> {
     const body: Record<string, unknown> = {};
     if (query.status?.length) body.status = query.status;
-    if (query.invoice_number) body.invoice_number = `${this.prefix}${query.invoice_number}`;
+    // search_data.invoice_number matches as a PREFIX in the real sandbox (probe 2026-10-26), so a bare search is scoped
+    // to this client's prefix and never pages through other users' invoices in a shared sandbox app.
+    body.invoice_number = `${this.prefix}${query.invoice_number || ''}`;
     const out: PayPalInvoice[] = [];
     for (let page = 1; page <= 20; page++) {
       const res = await this.api('POST', `/v2/invoicing/search-invoices?page=${page}&page_size=100&total_required=true`, body, { retryable: true });
       const data = await this.json(res) as { items?: unknown[]; total_pages?: number } | undefined;
       for (const raw of data?.items || []) {
         const n = String((raw as any)?.detail?.invoice_number || '');
-        if (n.startsWith(this.prefix)) out.push(toDomainInvoice(raw, this.prefix));
+        if (n.startsWith(this.prefix)) out.push(toDomainInvoice(await this.withTransactions(raw), this.prefix));
       }
       if (!data?.total_pages || page >= data.total_pages) break;
     }
     return out;
+  }
+
+  // The real search-invoices items carry payments.paid_amount / refunds.refund_amount but no transactions, so no payment
+  // or refund DATE (artifacts/sandbox/search-shape-2026-10-26.json). The schedule needs that date, so such invoices are
+  // read once with GET /invoices/{id} and cached until their status or amounts change (keeps 30 s polling to 1 call).
+  private detailCache = new Map<string, { sig: string; raw: unknown }>();
+  private async withTransactions(raw: any) {
+    const missing = (raw?.payments && !Array.isArray(raw.payments.transactions)) || (raw?.refunds && !Array.isArray(raw.refunds.transactions));
+    if (!missing || !raw?.id) return raw;
+    const sig = JSON.stringify([raw.status, raw.payments?.paid_amount, raw.refunds?.refund_amount]);
+    const hit = this.detailCache.get(raw.id);
+    if (hit && hit.sig === sig) return hit.raw;
+    const full = await this.json(await this.api('GET', `/v2/invoicing/invoices/${encodeURIComponent(raw.id)}`, undefined, { retryable: true }));
+    this.detailCache.set(raw.id, { sig, raw: full });
+    return full;
+  }
+
+  /** One page of POST /v2/invoicing/search-invoices with a caller-built `search_data` body (fact probe only). */
+  async searchRaw(body: Record<string, unknown>, page = 1, pageSize = 20) {
+    const res = await this.api('POST', `/v2/invoicing/search-invoices?page=${page}&page_size=${pageSize}&total_required=true`, body, { retryable: true });
+    const data = await this.json(res) as { items?: any[]; total_items?: number; total_pages?: number } | undefined;
+    const items = data?.items || [];
+    return {
+      total_items: data?.total_items, total_pages: data?.total_pages, numbers: items.map((i) => String(i?.detail?.invoice_number || '')),
+      // Field NAMES only (no values): which parts of an invoice the search response carries.
+      item_shapes: items.map((i) => ({ status: i?.status, keys: Object.keys(i || {}).sort(), detail_keys: Object.keys(i?.detail || {}).sort(), payments_keys: i?.payments ? Object.keys(i.payments).sort() : null })),
+    };
   }
 
   /** GET /v2/invoicing/invoices (INV:230 "List invoices"; page/page_size/total_required INV:315-321). One page, TRANCHE- only. */
@@ -309,7 +381,7 @@ export class SandboxInvoicingClient implements InvoicingClient {
     // Without the representation PayPal returns a link (INV:104); fall back to GET on its href.
     const raw = data?.id ? data : data?.href ? await this.json(await this.api('GET', new URL(data.href).pathname)) : data;
     const inv = toDomainInvoice(raw, this.prefix);
-    this.record('create_draft', inv.id, { invoice_number: input.invoice_number });
+    this.record('create_draft', inv.id, { invoice_number: input.invoice_number, representation: Boolean(data?.id) });
     return inv;
   }
 
@@ -361,12 +433,16 @@ export function sandboxClientFromEnv(opts: Omit<SandboxClientOptions, 'credentia
   const env = opts.env || process.env;
   const lookup = loadSandboxCredentials(env, opts.file);
   if (!lookup.creds) return { client: undefined, lookup };
-  return { client: new SandboxInvoicingClient({ ...opts, prefix: opts.prefix ?? invoicePrefixFromEnv(env), credentials: lookup.creds }), lookup };
+  return { client: new SandboxInvoicingClient({ ...opts, prefix: opts.prefix ?? invoicePrefixFromEnv(env), callLog: opts.callLog ?? (env.TRANCHE_PAYPAL_CALL_LOG || undefined), credentials: lookup.creds }), lookup };
 }
 
-/** TRANCHE_INVOICE_PREFIX (default TRANCHE-) lets a judge seed a fresh demo set; invoice_number is max 25 chars (INV:3795). */
+/**
+ * Invoice-number prefix: TRANCHE_INVOICE_PREFIX, else the prefix `npm run sandbox:seed` saved in the state file
+ * (TRANCHE_SANDBOX_STATE overrides its path), else TRANCHE-. invoice_number is max 25 chars (INV:3795).
+ */
 export function invoicePrefixFromEnv(env: NodeJS.ProcessEnv = process.env) {
-  const p = (env.TRANCHE_INVOICE_PREFIX || INVOICE_PREFIX).toUpperCase();
+  const saved = env.TRANCHE_INVOICE_PREFIX ? undefined : readSandboxState(env.TRANCHE_SANDBOX_STATE || SANDBOX_STATE_FILE)?.prefix;
+  const p = (env.TRANCHE_INVOICE_PREFIX || saved || INVOICE_PREFIX).toUpperCase();
   if (!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(p)) throw new Error(`TRANCHE_INVOICE_PREFIX must be 1-12 of A-Z, 0-9, '-' (got ${JSON.stringify(p)})`);
   return p;
 }

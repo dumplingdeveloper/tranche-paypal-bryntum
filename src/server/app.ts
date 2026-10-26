@@ -4,6 +4,7 @@ import type { ShiftPreview } from '../domain/types.ts';
 import { MockInvoicingClient } from '../paypal/mockInvoicing.ts';
 import { InvoicingError, type InvoicingClient } from '../paypal/invoicing.ts';
 import { PaymentWatcher, type PaymentEvent } from '../paypal/watcher.ts';
+import { PUBLIC_DEFAULT_APP_ID } from '../paypal/sandboxClient.ts';
 import type { AgentRunner, AgentTurn } from '../agent/runner.ts';
 import type { ToolHost } from '../agent/tools.ts';
 import { AuditLog } from './audit.ts';
@@ -19,7 +20,7 @@ export type TrancheOptions = {
   autoWatch?: boolean;
   /** Defaults to the deterministic mock. `TRANCHE_PAYPAL=sandbox` passes a SandboxInvoicingClient. */
   invoicing?: InvoicingClient;
-  /** Real calendar date (tests inject one); sandbox demo controls never send a date later than this. */
+  /** Real calendar date (tests inject one); sandbox refunds from the demo controls are never dated later than this. */
   realToday?: () => string;
 };
 
@@ -127,11 +128,20 @@ export async function createTranche(opts: TrancheOptions) {
     return { turnId, done: run };
   }
 
+  let appClosed = false;
+  const reportedMissing = new Set<string>();
   const AUTO_EVENTS = new Set(['INVOICING.INVOICE.PAID', 'INVOICING.INVOICE.REFUNDED', 'INVOICING.INVOICE.CANCELLED']);
   const watcher = new PaymentWatcher(invoicing, {
     today: () => today,
     onEvents: (events: PaymentEvent[], invoices) => {
+      if (appClosed) return;
       board.setInvoices(invoices);
+      for (const id of watcher.missing) {
+        if (reportedMissing.has(id)) continue;
+        reportedMissing.add(id);
+        const inv = invoices.find((i) => i.id === id);
+        audit.append('paypal', 'paypal.invoice_missing', { invoice_id: id, invoice_number: inv?.detail.invoice_number, note: 'No longer returned by PayPal search; the board keeps its last known copy.' });
+      }
       if (events.some((e) => !e.initial)) broker.sweepStale(`PayPal: ${events.filter((e) => !e.initial).map((e) => `${e.invoice_number} ${e.event_type}`).join(', ')}`);
       for (const e of events) {
         audit.append(e.source === 'tranche-clock' ? 'system' : 'paypal', 'paypal.event', { ...e });
@@ -149,10 +159,19 @@ export async function createTranche(opts: TrancheOptions) {
   await watcher.poll();
   if (opts.pollMs) watcher.start(opts.pollMs);
 
+  const sandboxInfo = invoicing as { appId?: string; prefix?: string };
   function snapshot() {
     return {
       ...board.snapshot(host.reminders),
-      modes: { paypal: invoicing.mode, paypal_endpoint: invoicing.baseUrl ?? null, agent: agent.info },
+      modes: {
+        paypal: invoicing.mode,
+        paypal_endpoint: invoicing.baseUrl ?? null,
+        paypal_app_id: sandboxInfo.appId ?? null,
+        paypal_prefix: sandboxInfo.prefix ?? null,
+        paypal_public_credentials: sandboxInfo.appId === PUBLIC_DEFAULT_APP_ID,
+        paypal_poll_s: opts.pollMs ? opts.pollMs / 1000 : null,
+        agent: agent.info,
+      },
       confirmations: broker.list(),
       audit: audit.entries,
       events: watcher.history,
@@ -241,15 +260,16 @@ export async function createTranche(opts: TrancheOptions) {
         if (!inv) throw new HttpError(404, 'INVOICE_NOT_FOUND', `No invoice ${num}`);
         let result: unknown;
         const sandbox = invoicing.mode === 'sandbox';
-        // The real sandbox may refuse a payment/refund date in the future, so the demo clock is clamped to the real date there.
+        // Recording a payment dated on the demo clock (after the real date) was accepted by the real sandbox on 2026-10-26
+        // (artifacts/sandbox/probe-2026-10-26-9112L.json). A future refund date is unverified, so refunds stay clamped.
         const realToday = opts.realToday ? opts.realToday() : new Date().toISOString().slice(0, 10);
-        const actionDate = sandbox && realToday < today ? realToday : today;
+        const refundDate = sandbox && realToday < today ? realToday : today;
         if (action === 'payer_pays') {
           // A real PayPal payment needs a sandbox buyer in a browser; only the mock can simulate it.
           if (!(invoicing instanceof MockInvoicingClient)) throw new HttpError(409, 'NEEDS_BROWSER_PAYER', 'In SANDBOX mode a PayPal payment comes from a sandbox buyer paying the invoice link in a browser. Use "Record bank transfer" to record a payment via the API instead.');
           result = await invoicing.simulatePayerPayment(inv.id, today);
-        } else if (action === 'record_external_payment') result = await invoicing.recordPayment(inv.id, { payment_date: actionDate, method: 'BANK_TRANSFER', note: `Recorded in Tranche demo (${invoicing.mode})` });
-        else if (action === 'refund') result = await invoicing.recordRefund(inv.id, { refund_date: actionDate, method: 'BANK_TRANSFER' });
+        } else if (action === 'record_external_payment') result = await invoicing.recordPayment(inv.id, { payment_date: today, method: 'BANK_TRANSFER', note: `Recorded in Tranche demo (${invoicing.mode})` });
+        else if (action === 'refund') result = await invoicing.recordRefund(inv.id, { refund_date: refundDate, method: 'BANK_TRANSFER' });
         else if (action === 'cancel') result = await invoicing.cancelInvoice(inv.id, { send_to_recipient: false });
         else throw new HttpError(400, 'BAD_ACTION', 'action must be payer_pays | record_external_payment | refund | cancel');
         audit.append('demo-control', sandbox ? 'sandbox.demo_control' : 'mock.simulate', { action, invoice_number: num, result, note: sandbox ? 'PayPal SANDBOX API call made from a demo control' : 'MOCK PayPal: demo control, not a real PayPal call' });
@@ -276,6 +296,7 @@ export async function createTranche(opts: TrancheOptions) {
       });
     },
     async close() {
+      appClosed = true;
       watcher.stop();
       for (const c of clients) c.end();
       clients.clear();

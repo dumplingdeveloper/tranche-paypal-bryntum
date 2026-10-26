@@ -16,7 +16,7 @@ type State = {
   conflicts: Array<{ resource: string; resource_name: string; task_a: string; task_b: string; overlap_start: string; overlap_end: string }>;
   applied: Array<{ confirmation_id: string }>;
   gantt: { tasks: GanttTaskData[]; dependencies: unknown[]; resources: unknown[]; assignments: unknown[] };
-  modes: { paypal: string; paypal_endpoint?: string | null; agent: { mode: string; label: string; live: boolean; model?: string; reason?: string } };
+  modes: { paypal: string; paypal_endpoint?: string | null; paypal_app_id?: string | null; paypal_prefix?: string | null; paypal_public_credentials?: boolean; paypal_poll_s?: number | null; agent: { mode: string; label: string; live: boolean; model?: string; reason?: string } };
   confirmations: Conf[];
   audit: Array<{ seq: number; at: string; actor: string; action: string; details: Record<string, unknown> }>;
   events: Array<{ id: string; event_type: string; source: string; summary: string; initial: boolean }>;
@@ -256,10 +256,18 @@ function renderTop(s: State) {
   const pp = $('paypal-mode');
   // The sandbox client only accepts api-m.sandbox.paypal.com or a loopback stub (tests); say which one is in use.
   const realSandbox = s.modes.paypal_endpoint === 'https://api-m.sandbox.paypal.com';
-  pp.textContent = sandbox && !realSandbox ? 'PayPal: SANDBOX API · local stub' : `PayPal: ${s.modes.paypal.toUpperCase()}`;
+  const creds = s.modes.paypal_public_credentials ? "PayPal's public default sandbox credentials (shared app)" : 'your own sandbox app';
+  pp.textContent = !sandbox ? 'PayPal: MOCK' : realSandbox ? 'PayPal: REAL SANDBOX API' : 'PayPal: SANDBOX API · local stub';
   pp.className = `pill ${sandbox ? 'sandbox' : 'mock'}`;
-  pp.title = sandbox ? `PayPal REST Invoicing v2 at ${s.modes.paypal_endpoint}, polled. Sandbox money is not real.` : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
-  $('poll-note').textContent = sandbox ? 'polled from the PayPal sandbox Invoicing API' : 'polled from Invoicing API (mock)';
+  pp.title = sandbox ? `PayPal REST Invoicing v2 at ${s.modes.paypal_endpoint}, app ${s.modes.paypal_app_id || '?'} (${creds}), invoices ${s.modes.paypal_prefix || ''}*, polled. Sandbox money is not real.` : 'Deterministic mock of PayPal Invoicing v2. No real money moves.';
+  $('poll-note').textContent = !sandbox ? 'polled from Invoicing API (mock)'
+    : realSandbox ? `polled every ${s.modes.paypal_poll_s ?? 30} s from api-m.sandbox.paypal.com · ${s.modes.paypal_public_credentials ? 'PayPal public default credentials' : `app ${s.modes.paypal_app_id || '?'}`} · ${s.modes.paypal_prefix || ''}*`
+    : 'polled from the sandbox API (local stub)';
+  const simNote = document.getElementById('sim-note');
+  if (simNote) {
+    simNote.hidden = !sandbox;
+    simNote.textContent = 'A real PayPal payment needs a sandbox buyer paying the invoice link in a browser, so this demo records the payment through the Invoicing API ("Record bank transfer").';
+  }
   const demoSummary = document.querySelector('details.demo > summary');
   if (demoSummary) demoSummary.textContent = !sandbox ? 'Demo controls — simulate PayPal activity (MOCK only)' : realSandbox ? 'Demo controls — real PayPal SANDBOX API calls' : 'Demo controls — sandbox API calls to the local stub';
   const payerBtn = document.querySelector<HTMLButtonElement>('button[data-sim="payer_pays"]');

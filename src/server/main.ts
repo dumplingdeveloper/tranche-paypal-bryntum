@@ -9,7 +9,7 @@ import { CopilotAgent, chooseAgent } from '../agent/copilot.ts';
 import { ScriptedAgent } from '../agent/scripted.ts';
 import { DEMO_TODAY } from '../domain/mockData.ts';
 import type { InvoicingClient } from '../paypal/invoicing.ts';
-import { sandboxClientFromEnv } from '../paypal/sandboxClient.ts';
+import { PUBLIC_DEFAULT_APP_ID, sandboxClientFromEnv } from '../paypal/sandboxClient.ts';
 import { missingDemoInvoices } from '../paypal/sandboxSeed.ts';
 
 // Ports used by other local projects; never bind them.
@@ -57,6 +57,8 @@ async function main() {
     }
     invoicing = client;
   }
+  const loopback = mode === 'sandbox' && /^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test((invoicing as { baseUrl?: string }).baseUrl || '');
+  const pollMs = mode !== 'sandbox' ? undefined : Math.max(loopback ? 5000 : 30000, Number(process.env.TRANCHE_POLL_MS || 30000));
   const preferred = Number(process.env.PORT || 4317);
   if (FORBIDDEN.has(preferred)) throw new Error(`Port ${preferred} is reserved by another local project`);
   const choice = await chooseAgent();
@@ -65,7 +67,8 @@ async function main() {
     autoWatch: process.env.TRANCHE_AUTO_AGENT !== '0',
     invoicing,
     // Sandbox has no local webhook receiver, so the watcher polls search-invoices (default every 30 s).
-    pollMs: mode === 'sandbox' ? Math.max(5000, Number(process.env.TRANCHE_POLL_MS || 30000)) : undefined,
+    // The real sandbox is polled at most every 30 s (it may be PayPal's shared public app); only a loopback test stub may go faster.
+    pollMs: pollMs,
     auditFile: process.env.TRANCHE_AUDIT_FILE || resolve(ROOT, 'artifacts/runtime/audit.jsonl'),
     agent: (host) => choice.kind === 'llm'
       ? new CopilotAgent(host, { client: choice.client, provider: choice.provider, model: choice.model, auth: choice.auth, today, liveLog: process.env.TRANCHE_LIVE_LOG || resolve(ROOT, 'artifacts/runtime/live-runs.jsonl') })
@@ -75,7 +78,7 @@ async function main() {
   const a = app.agent.info;
   console.log(`Tranche running at http://127.0.0.1:${port}/`);
   console.log(mode === 'sandbox'
-    ? `  PayPal: SANDBOX (${(invoicing as { baseUrl?: string }).baseUrl}, polling every ${Math.max(5000, Number(process.env.TRANCHE_POLL_MS || 30000)) / 1000} s, demo today ${today})`
+    ? `  PayPal: ${loopback ? 'SANDBOX API (local stub)' : 'REAL SANDBOX API'} (${(invoicing as { baseUrl?: string }).baseUrl}, app ${(invoicing as { appId?: string }).appId || '?'}${(invoicing as { appId?: string }).appId === PUBLIC_DEFAULT_APP_ID ? " = PayPal's public default sandbox credentials, shared" : ''}, invoices ${(invoicing as { prefix?: string }).prefix}*, polling every ${pollMs! / 1000} s, demo today ${today})`
     : `  PayPal: MOCK (deterministic sandbox-shaped data, demo today ${today})`);
   console.log(`  Agent:  ${a.label}${a.reason ? ` — ${a.reason}` : ''}${a.auth ? ` (${a.auth})` : ''}`);
   const shutdown = async () => { await app.close().catch(() => {}); process.exit(0); };

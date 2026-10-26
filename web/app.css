@@ -60,6 +60,7 @@ body { font-size: 14px; display: flex; flex-direction: column; background: #f4f6
 .ev code { font-size: 10.5px; background: #f2f4f8; padding: 0 4px; border-radius: 4px; }
 .demo { margin-top: 6px; font-size: 12px; }
 .demo-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.sim-note { margin: 5px 0 0; font-size: 11.5px; color: #5b4a00; background: #fff8db; border: 1px solid #f0dc8a; border-radius: 4px; padding: 4px 6px; }
 .audit { max-height: 150px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; }
 .audit div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #1b2433; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 1000; }
@@ -70,7 +71,7 @@ body { font-size: 14px; display: flex; flex-direction: column; background: #f4f6
 .b-gantt-task.b-milestone[class*="tranche-"] .b-gantt-task-content::before { background: var(--tranche) !important; }
 .b-gantt-task:not(.b-milestone)[class*="tranche-"] { background: var(--tranche); }
 #gantt .b-sch-label:empty { display: none; }
-#gantt .b-sch-label { position: relative; z-index: 2; background: rgba(255,255,255,.85); border-radius: 3px; padding: 0 2px; }
+#gantt .b-sch-label { position: relative; z-index: 2; background: #fff; border-radius: 3px; padding: 2px 3px; }
 /* The "Today" line sits behind bars and labels (Bryntum draws it at z-index 10, above the foreground canvas at 6), so
    it no longer cuts through a milestone label; its badge drops below the first summary bar so that bar can't hide it. */
 #gantt .b-sch-time-range.b-sch-line { z-index: 5; }

@@ -67,7 +67,8 @@ export async function startPayPalStub(o: StubOptions) {
     if (r.method === 'POST' && r.path === '/v2/invoicing/invoices') {
       const d = json?.detail || {};
       if (!d.currency_code) return err(res, 400, 'MISSING_REQUIRED_PARAMETER', 'detail.currency_code is required');
-      if ([...invoices.values()].some((x) => x.detail.invoice_number === d.invoice_number)) return err(res, 422, 'STUB_DUPLICATE_INVOICE_NUMBER', 'Invoice number already exists');
+      // Real sandbox 2026-10-26 (artifacts/sandbox/probe-2026-10-26-9112L.json): 422 DUPLICATE_INVOICE_NUMBER, field /detail/invoice_number.
+      if ([...invoices.values()].some((x) => x.detail.invoice_number === d.invoice_number)) return send(res, 422, { name: 'UNPROCESSABLE_ENTITY', message: 'The requested action could not be performed, semantically incorrect, or failed business validation.', debug_id: 'stubdebugdup', details: [{ field: '/detail/invoice_number', location: 'body', issue: 'DUPLICATE_INVOICE_NUMBER', description: 'Invoice number is duplicate.' }] });
       if (o.rejectPastDueDate && d.payment_term?.due_date && d.payment_term.due_date < (o.today || '0000')) {
         // Shape of a validation error per https://developer.paypal.com/api/rest/responses/ (details[].field/value/location/issue).
         return send(res, 422, { name: 'UNPROCESSABLE_ENTITY', message: 'The requested action could not be performed.', debug_id: 'stubdebugdue', details: [{ field: '/detail/payment_term/due_date', value: d.payment_term.due_date, location: 'body', issue: 'STUB_INVALID_VALUE', description: 'Value is invalid (stub knob).' }] });
@@ -83,9 +84,13 @@ export async function startPayPalStub(o: StubOptions) {
     if (r.method === 'GET' && r.path === '/v2/invoicing/invoices') return send(res, 200, paged([...invoices.values()]));
     if (r.method === 'POST' && r.path === '/v2/invoicing/search-invoices') {
       let all = [...invoices.values()];
-      if (json?.invoice_number) all = all.filter((x) => x.detail.invoice_number === json.invoice_number);
+      // Real sandbox: invoice_number matches as a prefix (full number → 1, prefix → 1, middle substring → 0; probe-2026-10-26-9112L.json).
+      if (json?.invoice_number) all = all.filter((x) => String(x.detail.invoice_number).startsWith(json.invoice_number));
       if (json?.status?.length) all = all.filter((x) => json.status.includes(x.status));
-      return send(res, 200, paged(all));
+      // Real sandbox: search items carry payments.paid_amount / refunds.refund_amount but NO transactions (dates); only
+      // GET /invoices/{id} has them (artifacts/sandbox/search-shape-2026-10-26.json).
+      const summary = (x: any) => ({ ...x, ...(x.payments ? { payments: { paid_amount: x.payments.paid_amount } } : {}), ...(x.refunds ? { refunds: { refund_amount: x.refunds.refund_amount } } : {}) });
+      return send(res, 200, paged(all.map(summary)));
     }
     if (!m) return err(res, 404, 'STUB_NO_ROUTE', `No route ${r.method} ${r.path}`);
     if (!inv) return err(res, 404, 'INVALID_RESOURCE_ID', 'Requested resource ID was not found.');
@@ -98,11 +103,16 @@ export async function startPayPalStub(o: StubOptions) {
     }
     if (action === 'send') {
       // INV:340: issue date in the future → SCHEDULED, otherwise sent now.
-      inv.status = inv.detail.invoice_date > (o.today || '9999') ? 'SCHEDULED' : 'SENT';
+      // Real sandbox: a share-link send (send_to_recipient=false) leaves the invoice UNPAID (probe). SENT for an e-mailed send is not verified.
+      inv.status = inv.detail.invoice_date > (o.today || '9999') ? 'SCHEDULED' : json?.send_to_recipient === false ? 'UNPAID' : 'SENT';
       return send(res, 200, { rel: 'self', href: `http://stub/v2/invoicing/invoices/${inv.id}`, method: 'GET' });
     }
     if (action === 'remind') return send(res, 204);
-    if (action === 'cancel') { inv.status = 'CANCELLED'; return send(res, 204); }
+    if (action === 'cancel') {
+      // Real sandbox: 422 CANNOT_CANCEL_PAID_INVOICE "Cannot cancel a paid or partially paid invoice." (probe).
+      if (/PAID/.test(inv.status) && inv.status !== 'UNPAID') return send(res, 422, { name: 'UNPROCESSABLE_ENTITY', message: 'The requested action could not be performed.', debug_id: 'stubdebugcancel', details: [{ field: 'invoiceId', location: 'path', issue: 'CANNOT_CANCEL_PAID_INVOICE', description: 'Cannot cancel a paid or partially paid invoice.' }] });
+      inv.status = 'CANCELLED'; return send(res, 204);
+    }
     if (action === 'payments') {
       if (!json?.method) return err(res, 400, 'MISSING_REQUIRED_PARAMETER', 'method is required');
       const paidBefore = Number(inv.payments?.paid_amount?.value || 0);
@@ -112,7 +122,8 @@ export async function startPayPalStub(o: StubOptions) {
       const paid = paidBefore + amt;
       inv.payments = { paid_amount: money(inv.amount.currency_code, paid), transactions };
       // INV:745: "If no payment is due, the invoice is marked as PAID. Otherwise ... PARTIALLY PAID."
-      inv.status = paid + 1e-9 >= Number(inv.amount.value) ? 'PAID' : 'PARTIALLY_PAID';
+      // Real sandbox: a fully recorded external payment gives MARKED_AS_PAID (probe). PARTIALLY_PAID is from INV:745, not verified.
+      inv.status = paid + 1e-9 >= Number(inv.amount.value) ? 'MARKED_AS_PAID' : 'PARTIALLY_PAID';
       return send(res, 200, { payment_id });
     }
     if (action === 'refunds') {

@@ -1,0 +1,14 @@
+Seeding https://api-m.sandbox.paypal.com (credentials from file; values not shown), prefix TR-AM5A7- (saved set), demo clock 2026-11-03
+┌─────────┬──────────────────┬────────────────────────────┬─────────┬──────────────────┬──────────────┬────────────────────────────┬──────────────┬─────────┐
+│ (index) │ number           │ id                         │ target  │ status           │ due          │ overdue_days_on_demo_clock │ paid         │ actions │
+├─────────┼──────────────────┼────────────────────────────┼─────────┼──────────────────┼──────────────┼────────────────────────────┼──────────────┼─────────┤
+│ 0       │ 'TR-AM5A7-INV-1' │ 'INV2-85WS-DXX7-YF59-8AB3' │ 'PAID'  │ 'MARKED_AS_PAID' │ '2026-10-05' │ 0                          │ '2026-10-04' │ 'found' │
+│ 1       │ 'TR-AM5A7-INV-2' │ 'INV2-W5D8-56GR-V4RY-4L2Y' │ 'SENT'  │ 'UNPAID'         │ '2026-10-25' │ 9                          │ ''           │ 'found' │
+│ 2       │ 'TR-AM5A7-INV-3' │ 'INV2-LQSX-ZEZZ-UQ5N-JH89' │ 'DRAFT' │ 'DRAFT'          │ '2026-11-22' │ 0                          │ ''           │ 'found' │
+│ 3       │ 'TR-AM5A7-INV-4' │ 'INV2-P3J4-SKC9-F6DL-SUTY' │ 'PAID'  │ 'MARKED_AS_PAID' │ '2026-10-22' │ 0                          │ '2026-10-20' │ 'found' │
+│ 4       │ 'TR-AM5A7-INV-5' │ 'INV2-RKT4-4H98-DM4V-HUZG' │ 'SENT'  │ 'UNPAID'         │ '2026-11-16' │ 0                          │ ''           │ 'found' │
+└─────────┴──────────────────┴────────────────────────────┴─────────┴──────────────────┴──────────────┴────────────────────────────┴──────────────┴─────────┘
+PayPal app: APP-80W284485P519543T — PayPal's default PUBLIC sandbox credentials: a shared app, other people can see these invoices
+Overdue is derived from due_date and the demo clock (TRANCHE_TODAY, default 2026-11-03); PayPal has no OVERDUE status.
+PayPal requests sent: 9
+Next: TRANCHE_PAYPAL=sandbox npm start

@@ -1,6 +1,6 @@
 {
   "written_by": "test",
-  "at": "2026-10-25T23:52:39.227Z",
+  "at": "2026-10-26T13:12:39.190Z",
   "refund_card": "cf_0001",
   "reminder_card": "cf_0003",
   "engine": {
@@ -23,7 +23,7 @@
   },
   "reminder_audit": {
     "seq": 23,
-    "at": "2026-10-25T23:52:38.699Z",
+    "at": "2026-10-26T13:12:38.665Z",
     "actor": "paypal",
     "action": "paypal.invoice.remind",
     "details": {

@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-26T13:01:08.914Z",
+  "request": "POST /v2/invoicing/search-invoices search_data {invoice_number:\"TR-8KZ7A-INV-2\"} (INV-2 is MARKED_AS_PAID; GET of the same invoice returns payments.transactions)",
+  "total_items": 1,
+  "total_pages": 1,
+  "numbers": [
+    "TR-8KZ7A-INV-2"
+  ],
+  "item_shapes": [
+    {
+      "status": "MARKED_AS_PAID",
+      "keys": [
+        "amount",
+        "detail",
+        "due_amount",
+        "id",
+        "links",
+        "payments",
+        "primary_recipients",
+        "status",
+        "unilateral"
+      ],
+      "detail_keys": [
+        "currency_code",
+        "group_draft",
+        "invoice_date",
+        "invoice_number",
+        "metadata",
+        "note",
+        "payment_term",
+        "reference",
+        "viewed_by_recipient"
+      ],
+      "payments_keys": [
+        "paid_amount"
+      ]
+    }
+  ],
+  "requests_sent": 2
+}

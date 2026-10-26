@@ -7,6 +7,8 @@ import { InvoicingError } from './invoicing.ts';
 import { SEED_REFERENCE, type SandboxInvoicingClient } from './sandboxClient.ts';
 
 const minDate = (a: string, b: string) => (a <= b ? a : b);
+/** Fake recipients only: every sandbox invoice goes to an @example.com address (reserved domain, RFC 2606). */
+export const exampleEmail = (businessName: string) => `${businessName.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}@example.com`;
 export const isoToday = () => new Date().toISOString().slice(0, 10);
 
 /** Invoice numbers the demo board needs (one per tranche milestone). */
@@ -37,11 +39,13 @@ const dueDateRejected = (err: unknown) => err instanceof InvoicingError && err.s
 export async function seedSandbox(client: SandboxInvoicingClient, opts: { demoToday: string; realToday?: string }) {
   const realToday = opts.realToday || isoToday();
   const rows: SeedRow[] = [];
+  // One prefix-scoped search for the whole set (search_data.invoice_number is a prefix match in the sandbox).
+  const existing = await client.searchInvoices();
   for (const target of MOCK_INVOICES) {
     const num = target.detail.invoice_number;
     const actions: string[] = [];
     let note: string | undefined;
-    let inv = (await client.searchInvoices({ invoice_number: num })).find((i) => i.detail.invoice_number === num);
+    let inv = existing.find((i) => i.detail.invoice_number === num);
     if (inv) actions.push('found');
     else {
       const due = target.detail.payment_term.due_date;
@@ -49,7 +53,7 @@ export async function seedSandbox(client: SandboxInvoicingClient, opts: { demoTo
       const draft = {
         invoice_number: num,
         invoice_date: minDate(target.detail.invoice_date, realToday),
-        recipient: target.primary_recipients[0].billing_info,
+        recipient: { business_name: target.primary_recipients[0].billing_info.business_name, email_address: exampleEmail(target.primary_recipients[0].billing_info.business_name) },
         item: { name: `${num} delivery tranche`, amount: target.amount },
         note: 'Tranche demo invoice (PayPal sandbox). No real money.',
       };
@@ -67,10 +71,10 @@ export async function seedSandbox(client: SandboxInvoicingClient, opts: { demoTo
     const want = STAGE[target.status] ?? 0;
     const have = STAGE[inv.status];
     if (have === undefined || have > want) {
-      note = `DRIFT: sandbox status ${inv.status}, demo wants ${target.status}. Not changed; set TRANCHE_INVOICE_PREFIX to seed a fresh set.`;
+      note = `DRIFT: sandbox status ${inv.status}, demo wants ${target.status}. Not changed; run \`npm run sandbox:seed -- --fresh\` to seed a new set under a new prefix.`;
     } else {
       if (have === 0 && want >= 1) {
-        // Share-link send: no PayPal email goes to the fictional .example recipients (INV:340 send_to_recipient=false).
+        // Share-link send: no PayPal email goes to the fictional @example.com recipients (INV:340 send_to_recipient=false).
         await client.sendInvoice(inv.id, { send_to_recipient: false, send_to_invoicer: false });
         actions.push('sent');
       }
@@ -109,7 +113,7 @@ export async function smokeSandbox(client: SandboxInvoicingClient, opts: { realT
   let draftId: string | undefined;
   try {
     const due = new Date(Date.parse(`${realToday}T00:00:00Z`) + 14 * 86_400_000).toISOString().slice(0, 10);
-    const draft = await client.createDraft({ invoice_number: number, invoice_date: realToday, due_date: due, reference: 'tranche-smoke', recipient: { business_name: 'Tranche Smoke Test', email_address: 'smoke@tranche.example' }, item: { name: 'Smoke test (deleted again)', amount: { currency_code: 'EUR', value: '1.00' } } });
+    const draft = await client.createDraft({ invoice_number: number, invoice_date: realToday, due_date: due, reference: 'tranche-smoke', recipient: { business_name: 'Tranche Smoke Test (fake)', email_address: 'smoke@example.com' }, item: { name: 'Smoke test (deleted again)', amount: { currency_code: 'EUR', value: '1.00' } } });
     draftId = draft.id;
     steps.push({ step: 'POST /v2/invoicing/invoices (draft)', ok: draft.status === 'DRAFT', detail: `${draft.id} ${draft.status}` });
     const got = await client.getInvoice(draft.id);
