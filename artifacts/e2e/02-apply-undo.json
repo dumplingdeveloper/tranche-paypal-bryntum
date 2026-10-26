@@ -1,7 +1,11 @@
 {
   "written_by": "test",
-  "at": "2026-10-25T23:52:31.537Z",
+  "at": "2026-10-26T00:36:49.279Z",
   "confirmation": "cf_0001",
+  "card_after_undo": {
+    "status": "undone",
+    "resolution": "approved by owner; undone by owner via Bryntum STM"
+  },
   "preview_geometry": {
     "bars": {
       "acme-discovery": {

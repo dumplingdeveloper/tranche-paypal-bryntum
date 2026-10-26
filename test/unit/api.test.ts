@@ -56,8 +56,10 @@ test('ask → approve → engine report → undo, with broker + audit state at e
   s = await state();
   assert.equal(s.plan_dates['INV-2'], '2026-10-25');
   assert.deepEqual(s.conflicts, []);
+  assert.equal(s.confirmations.find((c: any) => c.id === card.id).status, 'undone');
+  assert.equal((await post('/api/schedule/undo', { confirmation_id: card.id })).status, 409, 'an undone change cannot be undone twice');
   const actions = s.audit.map((e: any) => e.action);
-  for (const a of ['agent.mode', 'paypal.event', 'agent.tool_call', 'confirmation.requested', 'agent.turn', 'confirmation.hash_mismatch', 'schedule.applied', 'confirmation.approved', 'engine.verified', 'engine.mismatch', 'schedule.undone']) assert.ok(actions.includes(a), a);
+  for (const a of ['agent.mode', 'paypal.event', 'agent.tool_call', 'confirmation.requested', 'agent.turn', 'confirmation.hash_mismatch', 'schedule.applied', 'confirmation.approved', 'engine.verified', 'engine.mismatch', 'schedule.undone', 'confirmation.undone']) assert.ok(actions.includes(a), a);
 });
 
 test('mock simulate: payer pays INV-2 → PAID event → (auto-watch off) no agent turn; stale card after payment', async () => {

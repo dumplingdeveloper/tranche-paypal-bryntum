@@ -76,3 +76,22 @@ test('audit entries are append-only and frozen', () => {
   assert.equal(e.seq, 1);
   assert.throws(() => { (e as { action: string }).action = 'y'; });
 });
+
+test('undo marks an approved schedule change UNDONE (audited); anything else is refused', async () => {
+  const { broker, audit, make } = setup();
+  const pending = make('INV-3');
+  assert.throws(() => broker.markUndone(pending.id, 'bryntum-stm'), code('NOT_UNDOABLE'));
+  const reminder = make('INV-2', 'send_reminder');
+  await broker.approve(reminder.id, reminder.payload_hash);
+  assert.throws(() => broker.markUndone(reminder.id, 'bryntum-stm'), code('NOT_UNDOABLE'));
+  const c = make('INV-2');
+  await broker.approve(c.id, c.payload_hash);
+  const u = broker.markUndone(c.id, 'bryntum-stm');
+  assert.equal(u.status, 'undone');
+  assert.equal(broker.get(c.id)!.status, 'undone');
+  assert.equal(u.resolution, 'approved by owner; undone by owner via Bryntum STM');
+  const e = audit.entries.filter((x) => x.action === 'confirmation.undone');
+  assert.deepEqual(e.map((x) => [x.actor, (x.details as any).id, (x.details as any).via]), [['owner', c.id, 'bryntum-stm']]);
+  assert.throws(() => broker.markUndone(c.id, 'bryntum-stm'), code('NOT_UNDOABLE'));
+  assert.throws(() => broker.markUndone('cf_9999', 'bryntum-stm'), code('NOT_FOUND'));
+});

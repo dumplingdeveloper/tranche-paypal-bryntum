@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { AuditLog } from './audit.ts';
 
 export type ConfirmationKind = 'apply_schedule' | 'send_reminder';
-export type ConfirmationStatus = 'pending' | 'approved' | 'rejected' | 'stale' | 'superseded' | 'failed';
+export type ConfirmationStatus = 'pending' | 'approved' | 'rejected' | 'stale' | 'superseded' | 'failed' | 'undone';
 
 export type Confirmation = {
   id: string;
@@ -126,6 +126,17 @@ export class ConfirmationBroker {
       marked.push(structuredClone(c));
     }
     return marked;
+  }
+
+  // An approved schedule change that the owner reverted (Bryntum STM undo) must not keep saying APPROVED.
+  markUndone(id: string, detail: string, actor: 'owner' = 'owner') {
+    const c = this.get(id);
+    if (!c) throw new BrokerError(404, 'NOT_FOUND', `No confirmation ${id}`);
+    if (c.status !== 'approved' || c.kind !== 'apply_schedule') throw new BrokerError(409, 'NOT_UNDOABLE', `Confirmation ${id} is ${c.status} (${c.kind}); only an approved schedule change can be undone`);
+    const approvedAt = c.resolved_at;
+    this.resolve(c, 'undone', `${c.resolution}; undone by ${actor} via ${detail === 'bryntum-stm' ? 'Bryntum STM' : detail}`);
+    this.audit.append(actor, 'confirmation.undone', { id, kind: c.kind, invoice_number: c.invoice_number, preview_id: c.preview_id, approved_at: approvedAt, via: detail });
+    return structuredClone(c);
   }
 
   reject(id: string, reason = 'rejected by owner', actor: 'owner' = 'owner') {

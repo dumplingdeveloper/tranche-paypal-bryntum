@@ -209,9 +209,13 @@ export async function createTranche(opts: TrancheOptions) {
       if (req.method === 'POST' && path === '/api/schedule/undo') {
         const body = await readJson(req);
         let change;
-        try { change = board.undo(String(body.confirmation_id || '')); } catch (err) { throw new HttpError(409, 'CANNOT_UNDO', (err as Error).message); }
+        const undoId = String(body.confirmation_id || '');
+        const conf = broker.get(undoId);
+        if (conf && conf.status !== 'approved') throw new HttpError(409, 'CANNOT_UNDO', `Confirmation ${undoId} is ${conf.status}`);
+        try { change = board.undo(undoId); } catch (err) { throw new HttpError(409, 'CANNOT_UNDO', (err as Error).message); }
         audit.append('owner', 'schedule.undone', { confirmation_id: change.confirmation_id, preview_id: change.preview_id, invoice_number: change.invoice_number, plan_date_restored: change.from, via: 'bryntum-stm' });
         const expected = scheduleToObject(board.schedule());
+        broker.markUndone(change.confirmation_id, 'bryntum-stm');
         broadcast('schedule.undone', { confirmation_id: change.confirmation_id, invoice_number: change.invoice_number, plan_date: change.from, expected });
         broker.sweepStale(`${change.confirmation_id} undone`);
         stateChanged();

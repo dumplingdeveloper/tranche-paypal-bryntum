@@ -111,10 +111,16 @@ test('agent preview → owner applies in the UI → Bryntum engine moves the cha
     assert.equal(s.plan_dates['INV-2'], '2026-10-25');
     assert.deepEqual(await stmInfo(page), { position: 0, queue: [card.id], canUndo: false });
     assert.ok(s.audit.some((e: any) => e.action === 'schedule.undone' && e.details.confirmation_id === card.id && e.details.via === 'bryntum-stm'));
+    // The card no longer claims APPROVED: broker state is 'undone' and the audit trail says so.
+    const undoneCard = s.confirmations.find((c: any) => c.id === card.id);
+    assert.equal(undoneCard.status, 'undone');
+    assert.equal(undoneCard.resolution, 'approved by owner; undone by owner via Bryntum STM');
+    assert.ok(s.audit.some((e: any) => e.action === 'confirmation.undone' && e.details.id === card.id && e.details.via === 'bryntum-stm'));
+    assert.equal(await page.locator(`[data-confirmation="${card.id}"].conf.undone`).count(), 1, 'UI card carries the undone state class');
     assert.ok(s.audit.some((e: any) => e.action === 'engine.verified' && e.details.reason === 'undo'));
     assert.deepEqual(errors, []);
     const undoShot = await shot(page, '04-undone');
-    writeEvidence('02-apply-undo', { confirmation: card.id, preview_geometry: geo, engine_after_apply: pick(applied, ACME), engine_after_undo: pick(undone, ACME), outlined, screenshots: [previewShot, appliedShot, undoShot] });
+    writeEvidence('02-apply-undo', { confirmation: card.id, card_after_undo: { status: undoneCard.status, resolution: undoneCard.resolution }, preview_geometry: geo, engine_after_apply: pick(applied, ACME), engine_after_undo: pick(undone, ACME), outlined, screenshots: [previewShot, appliedShot, undoShot] });
     await context.close();
   } finally { await app.close(); }
 });

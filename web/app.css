@@ -47,7 +47,7 @@ body { font-size: 14px; display: flex; flex-direction: column; background: #f4f6
 .conf.pending { border-color: #5b7cfa; background: #f6f8ff; }
 .conf .head { display: flex; justify-content: space-between; font-size: 11px; color: #5b6475; }
 .conf .status { font-weight: 600; text-transform: uppercase; }
-.conf.approved .status { color: #1a9c5b; } .conf.stale .status, .conf.failed .status { color: #d6293e; } .conf.rejected .status, .conf.superseded .status { color: #6b7280; }
+.conf.approved .status { color: #1a9c5b; } .conf.stale .status, .conf.failed .status { color: #d6293e; } .conf.rejected .status, .conf.superseded .status, .conf.undone .status { color: #6b7280; }
 .conf .note { margin-top: 4px; padding: 4px 6px; background: #fff; border: 1px dashed #c7cfdd; border-radius: 6px; font-size: 12px; }
 .conf .actions { display: flex; gap: 6px; margin-top: 6px; }
 .conf .actions button { font: inherit; font-size: 12px; border-radius: 6px; padding: 3px 12px; cursor: pointer; border: 1px solid #c7cfdd; background: #fff; }
