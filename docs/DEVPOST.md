@@ -11,7 +11,7 @@ submission time (repo URL, video URL). Every claim below points at a file, a tes
 | "Include a text description that should explain the features and functionality" | sections below | draft |
 | "judges must be able to actually run or interact with a working build" … "clear, complete setup and run instructions" | README "Quick start for judges": `npm install && npm start`, no keys; verified on a fresh `git clone` (docs/BUILD_LOG.md "Clean clone") | ok |
 | "public and open source by including an open source license file … visible at the top of the repository page" | `LICENSE` (MIT) | repo not published yet (user pushes; we never push) |
-| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_SCRIPT.md (2:45 plan) | not recorded yet (M5) |
+| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_RENDER.md (draft, mock PayPal, 2:46.13) | draft rendered locally; not uploaded to YouTube |
 | "must not include third party trademarks … unless the Entrant has permission" | Video uses only our UI; Bryntum trial watermark visible as shipped; no music | check at render time |
 | "any test account credentials, API keys, or sandbox login details necessary" | None needed in mock mode; agent falls back to the labelled scripted agent; BYOK documented | ok |
 | "Third Party Integrations … must be authorized to use them in accordance with any … licensing requirements" | Bryntum trial per the sponsor page; open question on judging use → docs/FACTS_BRYNTUM_LICENCE.md §4 | **open: ask Bryntum on Discord** |
@@ -109,6 +109,8 @@ anthropic, ollama, typescript, node.js, playwright
 ## Try it out
 - Repo: [https://github.com/yuxinshiu63/<repo>] (MIT)
 - Video: [YouTube URL]
+- Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the
+  recorded live take; see docs/VIDEO_RENDER.md "Devpost media")
 - Run: `npm install && npm start` → http://127.0.0.1:4317/ (mock PayPal, no keys)
 
 ## Testing instructions for judges
