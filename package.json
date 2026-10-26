@@ -31,6 +31,7 @@
     "test:byok": "node --disable-warning=ExperimentalWarning --test test/byok/*.local.ts",
     "sandbox:seed": "node --disable-warning=ExperimentalWarning scripts/sandbox-seed.ts",
     "sandbox:smoke": "node --disable-warning=ExperimentalWarning scripts/sandbox-smoke.ts",
+    "sandbox:use-public-creds": "node --disable-warning=ExperimentalWarning scripts/sandbox-use-public-creds.ts",
     "sandbox:probe": "node --disable-warning=ExperimentalWarning scripts/sandbox-probe.ts"
   }
 }

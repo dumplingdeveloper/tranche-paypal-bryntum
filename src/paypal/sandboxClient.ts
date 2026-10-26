@@ -43,7 +43,7 @@ export function newDemoPrefix(rand: () => number = Math.random) {
 export type SandboxCredentials = { clientId: string; clientSecret: string };
 export type CredentialLookup = { creds?: SandboxCredentials; source: 'env' | 'file' | 'env+file' | 'none'; file: string; warnings: string[] };
 
-function parseEnvFile(text: string) {
+export function parseEnvFile(text: string) {
   const out: Record<string, string> = {};
   for (const line of text.split(/\r?\n/)) {
     const m = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
