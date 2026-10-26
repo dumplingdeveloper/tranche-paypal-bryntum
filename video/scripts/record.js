@@ -269,6 +269,15 @@ async function main() {
           await playStaticLine(step.voice, step.text, step.timeout || 60000);
           break;
         }
+        case 'snapshot': {
+          // Tranche: a still of the real UI at this moment (used for the Devpost gallery), written by the recorder.
+          const dir = path.join(OUT_DIR, dryRun ? 'stills-dry-run' : 'stills');
+          fs.mkdirSync(dir, { recursive: true });
+          const file = path.join(dir, `${step.name}.png`);
+          mark(step, { label: rel(file) });
+          await page.screenshot({ path: file, type: 'png' });
+          break;
+        }
         case 'caption':
           mark(step, { text: step.text });
           break;

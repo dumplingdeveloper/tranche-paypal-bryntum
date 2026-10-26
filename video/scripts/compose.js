@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright-core';
 import { OUT_DIR, ROOT, ensureDirs, parseArgs, readScene, rel } from './common.js';
+import { captionLabel, splitCaptionAtClauses } from './captions.js';
 
 const FFMPEG = '/usr/local/bin/ffmpeg';
 const FFPROBE = '/usr/local/bin/ffprobe';
@@ -352,8 +353,9 @@ async function main() {
     const start = mapTime(compressionSegments, originalStart);
     const endMapped = mapTime(compressionSegments, originalEnd);
     const mappedDur = Math.max(0.001, endMapped - start);
-    const label = speakerLabel(e);
-    const segments = splitCaption(e.text, 2, 34);
+    // Tranche: no "Narrator:" prefix, and captions split at sentence/clause boundaries (scripts/captions.js).
+    const label = captionLabel(e);
+    const segments = splitCaptionAtClauses(e.text);
     const weights = segments.map(s => Math.max(1, s.split(/\s+/).filter(Boolean).length));
     const totalWeight = weights.reduce((a, b) => a + b, 0);
     let cursor = start;
@@ -361,7 +363,7 @@ async function main() {
       const segDur = Math.max(0.4, mappedDur * weights[j] / totalWeight);
       const end = j === segments.length - 1 ? endMapped : Math.min(endMapped, cursor + segDur);
       const subtitleNumber = subtitleOverlays.length + 1;
-      const captionText = `${label}: ${segments[j]}`;
+      const captionText = label ? `${label}: ${segments[j]}` : segments[j];
       srt += `${subtitleNumber}\n${ts(cursor)} --> ${ts(end)}\n${escSrt(captionText)}\n\n`;
       const png = path.join(OUT_DIR, `subtitle-${subtitleNumber}.png`);
       const bbox = await renderSubtitle(captionText, png, bandHeight, subtitleBrowser);

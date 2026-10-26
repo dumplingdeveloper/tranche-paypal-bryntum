@@ -172,3 +172,26 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
 - **Pipeline changes:** compose.js card text from the scene and a sample-frame clamp; tts.js no longer overwrites
   video/LICENSES.md (provenance updated there).
 - **CPU courtesy:** `pgrep -f moneyDeskLive` was empty before the TTS, the recording and the compose run; AC power.
+
+## 2026-10-26 — Polish pass and Devpost media (mock PayPal, live agent)
+- **UNDONE status (commit `7a07d15`):** broker status `undone` via `markUndone` (only approved schedule cards;
+  otherwise `NOT_UNDOABLE`/`NOT_FOUND`), audit `confirmation.undone`, undo route answers 409 `CANNOT_UNDO` when the
+  card is not approved. Tests: broker unit test, api test (status `undone`, second undo → 409), e2e test 2 asserts
+  broker status, resolution and audit entry (state, not DOM text). `npm test` 58/58, `npm run test:e2e` 9/9.
+- **Captions:** new `video/scripts/captions.js` (MIT): no "Narrator:" label, "Owner:" kept; split per sentence,
+  then at the most balanced clause boundary, word boundary only as last resort (max 84 chars).
+- **Scene (`video/scenes/tranche.json`):** first 15 s now say who it is for, the problem and why it matters; the
+  payment section waits for each state before the line about it; the undo line says "the card now says undone";
+  5 `snapshot` steps (new in `record.js`) write real UI stills for the gallery; `maxSilenceMs` 1000.
+- **Render:** `video/out/tranche-draft-mock.mp4`, 166.133333 s, 1920×1080, md5 `94327a94fa872c627dbe53d66607c494`,
+  10,412,462 bytes. ASR (user's faster-whisper tool) ratio 0.962, only spelling variants. Details, frames and
+  remaining mismatches: docs/VIDEO_RENDER.md.
+- **Live run:** `gpt-6-luna` / `copilot-login:yuxinshiu63`, **2 live user turns** (owner question + auto-watch on
+  `INVOICING.INVOICE.PAID`), 5 + 3 tool calls. Build total **8 of 35**. The dry run used the scripted agent (not
+  counted). Compose was re-run once on the same recording after the caption splitter change (no model turn).
+- **Devpost media:** `video/scripts/devpost-media.js` (MIT) → `artifacts/devpost/` (5 gallery images 1920×1280,
+  1 thumbnail 1280×720, `media-report.json`), all from the recorder's real UI stills.
+- **CPU courtesy:** the user's busy check ran before the dry run, the render, the compose re-run and the ASR check.
+  One deadlock happened: my idle scripted server (cwd in this repo) blocked the other entry's `/tmp/tw-busy.sh`
+  while its waiting shell blocked mine. I stopped my server and waiting script (by PID via the tool) and let the
+  other entry go first.

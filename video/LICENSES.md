@@ -28,6 +28,15 @@ Not copied: `node_modules/`, `out/`, `stub/`, the old scenes, `record-live.js`.
 - `scripts/tts.js`: writes its licence check to `out/tts-licence-check.md` instead of overwriting this file.
 - New: `scenes/tranche.json` (our scene). Details: docs/VIDEO_RENDER.md.
 
+### Changed in the polish pass (2026-10-26)
+- `scripts/compose.js` (GPL-2.0-or-later): caption text and labels come from `scripts/captions.js`.
+- `scripts/record.js` (GPL-2.0-or-later): new `snapshot` step (page screenshot to `out/stills/<name>.png`).
+
+## New code in this folder (not copied; MIT like the app)
+- `scripts/captions.js`: caption split at sentence/clause boundaries; no label for narrator lines.
+- `scripts/devpost-media.js`: Devpost gallery (1920×1280) and YouTube thumbnail (1280×720) from the recorder's
+  real UI stills; writes `artifacts/devpost/`.
+
 ## Text to speech (from the source project's LICENSES.md)
 - kokoro-js 1.2.1, Apache-2.0 (https://www.npmjs.com/package/kokoro-js)
 - Model onnx-community/Kokoro-82M-v1.0-ONNX, `cardData.license: apache-2.0`
