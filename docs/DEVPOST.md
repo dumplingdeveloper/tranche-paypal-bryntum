@@ -11,7 +11,7 @@ submission time (repo URL, video URL). Every claim below points at a file, a tes
 | "Include a text description that should explain the features and functionality" | sections below | draft |
 | "judges must be able to actually run or interact with a working build" … "clear, complete setup and run instructions" | README "Quick start for judges": `npm install && npm start`, no keys; verified on a fresh `git clone` (docs/BUILD_LOG.md "Clean clone") | ok |
 | "public and open source by including an open source license file … visible at the top of the repository page" | `LICENSE` (MIT) | repo not published yet (user pushes; we never push) |
-| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_RENDER.md (draft: real PayPal sandbox + live model, 2:53.8) | draft rendered locally; not uploaded to YouTube |
+| Video "less than three (3) minutes" … "publicly visible on YouTube" | docs/VIDEO_RENDER.md (final take: real PayPal sandbox + live model, 2:52.8) | rendered locally; not uploaded to YouTube |
 | "must not include third party trademarks … unless the Entrant has permission" | Video uses only our UI; Bryntum trial watermark visible as shipped; no music | check at render time |
 | "any test account credentials, API keys, or sandbox login details necessary" | None needed in mock mode; agent falls back to the labelled scripted agent; BYOK documented | ok |
 | "Third Party Integrations … must be authorized to use them in accordance with any … licensing requirements" | Bryntum trial per the sponsor page; open question on judging use → docs/FACTS_BRYNTUM_LICENCE.md §4 | **open: ask Bryntum on Discord** |
@@ -51,7 +51,7 @@ events and automatically moves or flags milestones".
   each change the browser reports the engine's dates back and the server checks them against its own scheduler.
 - **Team capacity.** A Bryntum SchedulerPro view shares the Gantt's project, so people's bookings move with the
   plan and double bookings are outlined.
-- **PayPal reminder.** The owner can approve a PayPal invoice reminder drafted by the agent (a mock call by default; `POST …/remind` in sandbox mode — the real sandbox accepted `remind` in our probe, but the in-app approve → remind path has only run against the mock and the stub).
+- **PayPal reminder.** The owner can approve a PayPal invoice reminder drafted by the agent (a mock call by default; `POST …/remind` in sandbox mode). In-app path verified once on the real sandbox: agent card → owner clicks *Send PayPal reminder* → PayPal answered **204** (PayPal-Debug-Id `f222734b2490c`) and the invoice stayed `UNPAID` (`npm run test:sandbox-remind`, `artifacts/sandbox/sandbox-remind-flow.json`, docs/FACTS_PAYPAL_INVOICING.md §9). The 204 has no body, so we cannot see whether PayPal e-mailed the fake `@example.com` recipient.
 - **Real PayPal sandbox mode.** The badge says **PayPal: REAL SANDBOX API**; "Record bank transfer" records a real
   external payment in PayPal (`MARKED_AS_PAID`), and the next poll makes the plan react. A PayPal-button payment
   needs a sandbox buyer in a browser, which the app says on screen; we use record-payment instead.
@@ -158,6 +158,9 @@ Tranche is a **new project** started for this hackathon. All commits are in this
 | afa1feb | 2026-10-26 13:13 +00:00 | M4-live: fixes from the real PayPal sandbox, opt-in real-sandbox e2e, REAL SANDBOX API badge |
 | c1072d6 | 2026-10-26 13:15 +00:00 | `npm run sandbox:use-public-creds` |
 | d544b95, ef2581f | 2026-10-26 13:20–13:25 +00:00 | M4-live docs; sandbox video scene |
+| f1337ec, 9727250 | 2026-10-26 13:55 +00:00 | M4-live: sandbox video take, frames, Devpost media, cleanup |
+| 53f58be | 2026-10-26 14:36 +00:00 | Sorted invoice chips; in-app PayPal reminder on the real sandbox (204); leftovers cleanup |
+| the commit after 53f58be | 2026-10-26 | Final sandbox video re-render with sorted chips; Devpost media; docs |
 
 The official rules give the window: "Submission Period: Thursday Oct 1, 2026 (9:15 am Pacific Time) – Thursday
 Nov 12, 2026 (12:00 pm Pacific Time)" (https://paypalaihackathon.devpost.com/rules, fetched by the user
@@ -191,8 +194,8 @@ fresh"; the M4-prep sandbox client was also written fresh, not adapted from entr
 ## Known limitations (also in README)
 - PayPal is a sandbox-shaped mock by default. Sandbox mode has run against the real sandbox only with PayPal's
   shared public default credentials, not with our own app; no browser buyer payment was made (we record payments
-  through the API); a future-dated refund, `PARTIALLY_PAID` and the in-app remind path are unverified against the
-  real sandbox (docs/FACTS_PAYPAL_INVOICING.md §8). Paid demo invoices cannot be cancelled, so they stay in the
+  through the API); a future-dated refund and `PARTIALLY_PAID` are unverified against the
+  real sandbox, and the in-app remind path ran there once (204) (docs/FACTS_PAYPAL_INVOICING.md §8). Paid demo invoices cannot be cancelled, so they stay in the
   shared app.
 - Bryntum runs as the public trial with its watermark; licence questions for judging are open
   (docs/FACTS_BRYNTUM_LICENCE.md).

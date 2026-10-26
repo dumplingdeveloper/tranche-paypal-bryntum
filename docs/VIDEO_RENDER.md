@@ -1,4 +1,77 @@
-# Video render — real PayPal sandbox, live agent (2026-10-26, M4-live)
+# Video render — FINAL take: real PayPal sandbox, live agent, sorted chips (2026-10-26 14:19Z)
+
+This section supersedes the M4-live draft below (kept for the record). The only product changes since that take:
+invoice chips sorted INV-1 → INV-5 (`src/server/board.ts`, commit 53f58be) and the poll-note wording when polling is
+off (not visible here; this take polls every 30 s). Scene unchanged: `video/scenes/tranche-sandbox.json`.
+
+| | |
+|---|---|
+| File | `video/out/tranche-final-sandbox.mp4` (copy of `video/out/demo.mp4`; gitignored) |
+| Duration (ffprobe `format=duration`) | **172.766667 s = 2:52.8** (< 3:00) |
+| Video / audio | H.264 **1920×1080** 30 fps / AAC 48 000 Hz 2 ch; −16.2 LUFS integrated, true peak −1.4 dBFS |
+| Size | **10,974,961 bytes**, bit rate 508,198 b/s |
+| md5 | **3619b8d8022fc94d29b7b5046148592a** |
+| Recording started | 2026-10-26T14:19:22.139Z (recording-manifest.json) |
+| TTS | same 17 clips as the M4-live take (all cache hits), 152.5 s of speech, no music |
+| Captions | 39 cues; `grep -c Narrator video/out/subtitles.srt` → 0 |
+| PayPal | real sandbox, public default credentials, set `TR-QNEP1-`; **13 requests** during the take (ledger 242–254: 1 token, 8 `search-invoices` at 16.3–19.4 s each, 3 GETs, 1 `POST …/payments`); no 4xx/5xx |
+| Agent | live gpt-6-luna via Copilot login; **2 turns** (t1 owner question: 5 tool calls; t2 woken by `INVOICING.INVOICE.PAID`: 3 tool calls) |
+| Fast-forward | 10 segments, badge shown; the large one 12.81 s → 1 s at 1:50.3 (waiting for the search that sees the payment); the others 1.06–2.53 s |
+
+Conditions checked before recording: `pmset -g batt` → "Now drawing from 'AC Power'"; no `scripts/record.js`,
+`compose.js` or ffmpeg process from the other entry (cwd check) — none found, no wait needed.
+
+### Exact commands (repo root)
+```sh
+(cd video && HF_HOME=$PWD/.cache/hf caffeinate -is node scripts/tts.js --scene scenes/tranche-sandbox.json)   # no server needed
+TRANCHE_PAYPAL=sandbox TRANCHE_PAYPAL_CALL_LOG=$PWD/artifacts/sandbox/paypal-calls.jsonl PORT=4317 caffeinate -is npm start
+(cd video && caffeinate -is node scripts/record.js --scene scenes/tranche-sandbox.json --url http://127.0.0.1:4317/)  # exit 0
+# stop the server by PID right away (stops polling PayPal)
+(cd video && caffeinate -is node scripts/compose.js --scene scenes/tranche-sandbox.json)   # exit 0
+cp video/out/demo.mp4 video/out/tranche-final-sandbox.mp4
+for t in 12 62 97 106 125 146 155; do ffmpeg -v error -y -ss $t -i video/out/tranche-final-sandbox.mp4 -frames:v 1 artifacts/video-frames/sandbox-final/frame-$(printf %03d $t)s.png; done
+<asr-venv>/bin/python <session files>/asr_check.py video/out/tranche-final-sandbox.mp4 video/scenes/tranche-sandbox.json base.en
+(cd video && MEDIA_PAYPAL=sandbox node scripts/devpost-media.js)
+```
+
+### ASR check (faster-whisper base.en, the user's tool)
+`# script words 383, heard words 385, ratio 0.953` (`video/out/final-asr.txt`, gitignored). 15 differences: the 13
+spelling variants of the last take plus two mishearings, "below" → "the low" and "each" → "which". The audio clips are
+byte-identical cache hits of the accepted take (where both words were heard correctly), so these are ASR variance,
+not a change in the narration.
+
+### Frames (`artifacts/video-frames/sandbox-final/`, all viewed)
+| File | md5 | Caption | On screen |
+|---|---|---|---|
+| frame-012s.png | e89c6a67f6fb9d8184e2c2103f5f031e | "When a client pays late, they keep working unpaid, or they miss their own deadlines." | Board at rest; chips **INV-1 → INV-5**; REAL SANDBOX API / LIVE gpt-6-luna; INV-2 9d overdue; Build blocked (red); "polled every 30 s … TR-QNEP1-*" |
+| frame-062s.png | 5ae1438699941367d39c4ca6e7bdd47e | "The dashed ghost bars are that preview: the phases behind invoice two slide," | PREVIEW banner (+16d/+9d, slips 9d, Dana double-booked); ghosts INV-2 → 10 Nov, INV-3 → 1 Dec; 5 tool chips; cf_0001 + cf_0002 PENDING |
+| frame-097s.png | 21af4deb1fbbbfc0b97c9f668d99cd64 | "and the card now says undone." | Plan at base dates; cf_0001 **UNDONE** "approved by owner; undone by owner via Bryntum STM"; cf_0002 PENDING |
+| frame-106s.png | c768d62baf6073639e85ef19aa308691 | "A PayPal button payment needs a sandbox buyer in a browser," | Demo controls, INV-2 UNPAID, "Client pays via PayPal" disabled, "Record bank transfer", yellow browser-buyer note; audit #6–#17 |
+| frame-125s.png | d8a867009aa7a38c4be67321374bc629 | "The dashed bars show the new dates." | INV-2 MARKED_AS_PAID "paid 3 Nov"; release PREVIEW (+9d/+2d, slips 2d); ghosts INV-2 → 3 Nov, INV-3 → 24 Nov; cf_0003 PENDING; cf_0002 **STALE**; cf_0001 UNDONE |
+| frame-146s.png | 977d8f6469c5bdeda497b37bc238baf0 | "Every request, approval, apply, undo and PayPal event lands in the audit log." | Release applied (Build 3–24 Nov, Acme end 29 Nov); Dana's Build/Rollout outlined; INVOICING.INVOICE.PAID (sandbox-poll); audit #17–#28 |
+| frame-155s.png | db2d363fbe52390fd6eca5f08cc10ff3 | "and a live model through the GitHub Copilot SDK." | Same board; both pills visible in the top bar |
+
+All seven: readable at 1080p, no clipped labels, trial watermark visible, no "Narrator:" label, no e-mail
+addresses, tokens or home paths.
+
+### Where video and narration could still be read as not matching
+- From the click on *Record bank transfer* the STALE card can appear before the line that names it (as before).
+- The ~17 s PayPal search after the payment is fast-forwarded (badge shown).
+- "Changed my mind?" is the narrator speaking for the owner. Stylistic.
+
+### Devpost media (regenerated from this take; `artifacts/devpost/media-report.json`, all six viewed)
+| File | Size | md5 |
+|---|---|---|
+| gallery-1-01-overdue-blocks-phase.png | 1920×1280 | 1ea3f09251311aada85d845c6fa51099 |
+| gallery-2-02-agent-preview-and-approvals.png | 1920×1280 | 293590a6dbe815af830210cc63631ff4 |
+| gallery-3-03-applied-in-bryntum-engine.png | 1920×1280 | 0516525a73ecb96a0b4678b3961e4092 |
+| gallery-4-04-paid-reminder-stale-release-preview.png | 1920×1280 | 54a8afe619d8ef4eaf7afe73f135b964 |
+| gallery-5-05-release-applied-audit-log.png | 1920×1280 | 9d4943175f6ff9786012235be2efb221 |
+| youtube-thumbnail-1280x720.png | 1280×720 | a68cad92edcddde45c0d7da8739b5faa |
+
+Chips INV-1 → INV-5, REAL SANDBOX API pill, trial watermark visible, no e-mails, tokens or home paths.
+
+# Video render — real PayPal sandbox, live agent (2026-10-26, M4-live) — earlier draft, superseded above
 
 Status: **draft for review**. PayPal is the **real sandbox API** (pill "PayPal: REAL SANDBOX API" in every app frame;
 the PayPal-events header says "polled every 30 s from api-m.sandbox.paypal.com · PayPal public default credentials ·

@@ -48,7 +48,8 @@ Set `PORT=…` to choose another start port. The tests start their own servers o
 ### Use the real PayPal sandbox
 > **Status (2026-10-26):** run against `https://api-m.sandbox.paypal.com` with **PayPal's default public sandbox
 > credentials** (option A below): `sandbox:smoke` 5/5, `sandbox:seed` (rerun is idempotent), and the full demo
-> through the real UI (`npm run test:sandbox-live`, 1/1; screenshots in `artifacts/screenshots/sandbox/`). Not yet
+> through the real UI (`npm run test:sandbox-live`, 1/1; screenshots in `artifacts/screenshots/sandbox/`), and one in-app PayPal reminder
+> (`npm run test:sandbox-remind`, 1/1: PayPal answered 204, invoice stayed UNPAID). Not yet
 > run with a judge's own sandbox app (option B), though it is the same code path. Mock mode (the default) needs
 > none of this. Real PayPal answers and their evidence: [docs/FACTS_PAYPAL_INVOICING.md](docs/FACTS_PAYPAL_INVOICING.md) §9.
 
@@ -130,11 +131,13 @@ quotes: [docs/FACTS_BRYNTUM_LICENCE.md](docs/FACTS_BRYNTUM_LICENCE.md).
 ## Tests
 
 ```bash
-npm test             # 64 unit tests (scheduler, mock PayPal, sandbox client vs a local stub, broker, tools, API, SDK contract)
+npm test             # 65 unit tests (scheduler, mock PayPal, sandbox client vs a local stub, broker, tools, API, SDK contract)
 npm run test:e2e     # 9 Playwright tests through the real UI (scripted agent; headless Chrome; 1 in sandbox mode vs the stub)
 npm run sandbox:smoke  # real PayPal sandbox, needs credentials (see above)
 npm run sandbox:seed   # real PayPal sandbox, needs credentials (see above)
 npm run test:sandbox-live  # opt-in: full demo through the real UI against the REAL PayPal sandbox (~30 PayPal requests)
+npm run test:sandbox-remind  # opt-in: one in-app reminder (agent card → approve → POST …/remind) on INV-5 of the set
+                             # saved by sandbox:seed (~7 PayPal requests; needs that set's INV-5 still UNPAID)
 npm run test:byok    # BYOK wiring against a local stub endpoint with a fake key (no network)
 npm run test:live    # real model through the real UI (needs a Copilot login; set EXPECTED_GITHUB_LOGIN=<you>)
 ```

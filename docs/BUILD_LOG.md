@@ -274,3 +274,58 @@ credentials: `~/.config/tillwise/paypal-sandbox.env` is still absent).
   remain (cannot be cancelled). No evidence or screenshots were written by it (they are written later in the flow).
   Lesson: `npm run test:sandbox-live` *is* the opt-in; the skip message only appears with plain `node --test`.
 - **PayPal requests in this step: 222 of 250** (`wc -l artifacts/sandbox/paypal-calls.jsonl`).
+
+## 2026-10-26 (afternoon) — sorted chips, in-app reminder on the real sandbox, leftovers, final video
+Budget for this step: at most 80 PayPal requests. **Used: 55** = 35 in the ledger (lines 223–257) + **20 not in the
+ledger** (see the mistake below).
+
+- **Chip order.** PayPal's `search-invoices` returns newest first (INV-5, 4, 2, 1 for every prefix in
+  `artifacts/sandbox/leftovers-2026-10-26.txt`), so sandbox chips ran INV-5 … INV-1. `Board.setInvoices`
+  (`src/server/board.ts`) now keeps a copy sorted with a numeric `Intl.Collator` (`byInvoiceNumber`), so every view
+  (chips, `/api/state`, agent tools) sees INV-1 → INV-5; INV-10 sorts after INV-9. Test `test/unit/board.test.ts`
+  (reverse input, INV-10 after INV-9, plan dates unchanged on a reordered poll).
+- **Leftovers (12 requests, ledger 223–234).** Session script (not committed): it learned each earlier prefix by
+  GETting paid invoice ids from the ledger, searched each prefix once, and acted only on ids that were in our ledger.
+  Found one open invoice, `TR-9ZRGT-INV-2` (`INV2-W2R3-PGML-54V6-HFN8`, accidental run 1), UNPAID → **cancelled**.
+  Output: `artifacts/sandbox/leftovers-2026-10-26.txt`.
+- **New demo set `TR-QNEP1-` (20 requests, NOT in the ledger).** My mistake: I ran `npm run sandbox:seed` without
+  `TRANCHE_PAYPAL_CALL_LOG`, so its requests were not appended to `paypal-calls.jsonl`. The count comes from the
+  script's own output, "PayPal requests sent: 20" (`artifacts/sandbox/seed-2026-10-26-set2.txt`).
+- **In-app reminder on the real sandbox (7 requests, ledger 235–241).** New opt-in test
+  `test/sandbox-live/remind.sandbox.ts` (`npm run test:sandbox-remind`, gated by `LIVE_PAYPAL_REMIND`, skipped by
+  `test:sandbox-live` and `test:e2e`; `LIVE_PAYPAL_REMIND=stub` dry-runs it against the local stub, done first, 0
+  PayPal requests). One real run on `TR-QNEP1-INV-5` (not overdue; INV-2 kept untouched for the video), no polling:
+  scripted agent filed `cf_0002` (send_reminder, payload sha256 `1edcf4bd…`) → the test clicked *Send PayPal reminder*
+  → `POST /v2/invoicing/invoices/INV2-WQG6-U8YU-N8MX-LC9K/remind` **204**, PayPal-Debug-Id `f222734b2490c` → GET 200,
+  still `UNPAID`. The scripted agent also filed a schedule card `cf_0001` for INV-5 (left pending, not applied).
+  Evidence `artifacts/sandbox/sandbox-remind-flow.json`, screenshot `artifacts/screenshots/sandbox/S7-real-sandbox-reminder-sent.png`
+  (md5 `b51e102a03dfe7ff3cccf6444eebc251`).
+- **Poll note fix.** S7 showed "polled every 30 s" although that run had polling off (the UI fell back to 30 when
+  `paypal_poll_s` was null). `web/main.ts` now says "read at start-up and after demo actions (no background polling)"
+  in that case, for the real sandbox and the stub. S7 itself was not retaken (it would have sent a second reminder);
+  the evidence JSON notes this. The stub e2e screenshot `08-sandbox-mode-local-stub.png` changed accordingly (and
+  shows the sorted chips).
+- **Final video (13 requests, ledger 242–254).** Conditions checked right before: `pmset -g batt` "Now drawing from
+  'AC Power'"; no `scripts/record.js`/`compose.js`/ffmpeg process from the other entry. To keep the polling server
+  short-lived I ran the pipeline in its three steps: TTS first (all 17 clips cache hits, no server), then the server
+  (`TRANCHE_PAYPAL=sandbox`, live gpt-6-luna) only for `record.js`, stopped by PID right after, then `compose.js`.
+  **2 live model turns** (t1: 5 tool calls; t2 woken by `INVOICING.INVOICE.PAID`: 3 tool calls); build total **12 of
+  35**. Every `search-invoices` took 16.3–19.4 s again. Details in docs/VIDEO_RENDER.md.
+- **Cleanup of `TR-QNEP1-` (3 requests, ledger 255–257):** INV-5 cancelled (204, `f563156dd086a`), INV-3 draft
+  deleted (204, `f344307730d90`); output `artifacts/sandbox/cleanup-2026-10-26-set2.txt`. Local state renamed to
+  `.tranche/sandbox-state.used-TR-QNEP1-.json` (gitignored), so the next seed creates a new set.
+- **Left in the shared app (all ours, none open):**
+
+  | Prefix | Origin | Left |
+  |---|---|---|
+  | `TRP-9112L-` | probe | PAST MARKED_AS_PAID |
+  | `TR-E50AC-` | live e2e run 4 | INV-1/2/4 MARKED_AS_PAID, INV-5 CANCELLED |
+  | `TR-AM5A7-` | video set 1 | INV-1/2/4 MARKED_AS_PAID, INV-5 CANCELLED |
+  | `TR-8KZ7A-` | live e2e run 2 | INV-1/2/4 MARKED_AS_PAID, INV-5 CANCELLED |
+  | `TR-9ZRGT-` | accidental run 1 | INV-1/4 MARKED_AS_PAID, INV-2/5 CANCELLED |
+  | `TR-FZY5Y-` | live e2e run 3 | INV-1/2/4 MARKED_AS_PAID, INV-5 CANCELLED |
+  | `TR-BHJ3J-` | accidental run 13:53Z | INV-1/4 MARKED_AS_PAID, INV-2/5 CANCELLED |
+  | `TR-QNEP1-` | reminder + final video | INV-1/2/4 MARKED_AS_PAID, INV-5 CANCELLED (reminded once first) |
+
+  Paid invoices cannot be cancelled (`422 CANNOT_CANCEL_PAID_INVOICE`, FACTS §9). Drafts were deleted.
+- Tests: `npm test` 65/65, `npm run test:e2e` 9/9, `npm run test:sandbox-remind` 1/1 (real sandbox, once).
