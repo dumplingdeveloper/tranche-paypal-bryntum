@@ -344,3 +344,17 @@ ledger** (see the mistake below).
   http://127.0.0.1:4318/", "PayPal: MOCK", `GET /` 200, `/node_modules/@bryntum/gantt/gantt.css` 200,
   `/web/main.ts` 200, `/api/state` invoices INV-1 … INV-5 (server stopped by PID); `npm run test:e2e` → tests 9,
   pass 9, fail 0 (real Chrome against the clone). Temp directory deleted afterwards.
+
+## 2026-10-26 14:5x — Potential Impact: primary-source facts on late payment (docs only)
+No code, video or README changes; no PayPal calls, no model turns. Fetched with `curl -sL` on 2026-10-26 (UTC) and
+read from the fetched files themselves (search engines were used only to find the URLs).
+
+| # | Publisher | Document | URL | Fetched | Exact sentence(s) |
+|---|---|---|---|---|---|
+| 1 | European Commission | "Questions and Answers: Late Payment Regulation", Strasbourg, 12 September 2023 (QANDA/23/4412), 4-page PDF, HTTP 200, 53,006 bytes, md5 `3a2a0df8ba3e26240fa026d467718dae`; text via `pdftotext -layout` | https://ec.europa.eu/commission/presscorner/api/files/document/print/en/qanda_23_4412/QANDA_23_4412_EN.pdf | 2026-10-26T14:52:03Z (file mtime) | Q1: "Late payments have a major impact on SMEs. One in four bankruptcies are due to invoices not being paid on time." Q2: "In the EU, on average, one out of two invoices in commercial transactions are paid late (or not at all)." |
+| 2 | UK Department for Business and Trade (page "From: Department for Business and Trade, Blair McDougall MP and The Rt Hon Peter Kyle MP", "Published: 24 March 2026") | Press release "Time to Pay Up: Government unveils toughest crackdown on late payments in over 25 years", HTTP 200, 83,656 bytes, md5 `c126ce5dab60fac0d076b39f48deb517` | https://www.gov.uk/government/news/time-to-pay-up-government-unveils-toughest-crackdown-on-late-payments-in-over-25-years | 2026-10-26T14:53:50Z (file mtime) | "Some 38 businesses shut their doors every single day because they are not paid on time – the equivalent of 266 a week, and well over a thousand in any given month." "Every small business owner, including tradespeople, freelancers, family firms and the self-employed, have to waste time and money chasing unpaid invoices when they could be growing their business." |
+
+Not used: figures that I only saw in search summaries or secondary articles (e.g. "£11 billion", "86 hours a year");
+the gov.uk page does contain "costing the UK economy £11 billion every year", but two sources were enough.
+The EC figures describe EU commercial transactions in general (SMEs), not freelancers specifically; the UK sentence
+names freelancers explicitly.

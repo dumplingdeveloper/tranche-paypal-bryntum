@@ -28,7 +28,16 @@ work, an AI agent proposes the change, and nothing moves until you click Apply.
 ## Inspiration
 Freelancers and small agencies split client projects into payment tranches ("30% up front, 40% after design, 30%
 on launch"). When a tranche is late, the next phase should wait, but the plan lives in one tool and the invoices
-in another, so people keep building unpaid work or forget to chase. The Bryntum prize page suggests exactly this:
+in another, so people keep building unpaid work or forget to chase.
+
+**Why it matters.** The European Commission: "In the EU, on average, one out of two invoices in commercial
+transactions are paid late (or not at all)" and "One in four bankruptcies are due to invoices not being paid on time"
+([Questions and Answers: Late Payment Regulation, 12 Sep 2023](https://ec.europa.eu/commission/presscorner/api/files/document/print/en/qanda_23_4412/QANDA_23_4412_EN.pdf)).
+The UK Department for Business and Trade: "Some 38 businesses shut their doors every single day because they are not
+paid on time", and small business owners "including tradespeople, freelancers, family firms and the self-employed, have
+to waste time and money chasing unpaid invoices" ([Time to Pay Up, 24 Mar 2026](https://www.gov.uk/government/news/time-to-pay-up-government-unveils-toughest-crackdown-on-late-payments-in-over-25-years)).
+
+The Bryntum prize page suggests exactly this:
 "Agency delivery board (Gantt): multi-client project timelines with payment tranches marked as dependencies, so a
 late PayPal payment visibly blocks the next phase" and "Agent-driven rescheduler … an agent watches PayPal payment
 events and automatically moves or flags milestones".
