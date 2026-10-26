@@ -117,9 +117,53 @@ that depends on this payment" a one-line constraint change.
 bryntum-gantt, bryntum-schedulerpro, paypal-invoicing, paypal-server-sdk, apimatic, github-copilot-sdk, openai,
 anthropic, ollama, typescript, node.js, playwright
 
+## YouTube upload (ready to paste)
+Upload **after** the repo is published; the description links to it.
+
+| Field | Value |
+|---|---|
+| File | `video/out/tranche-final-sandbox.mp4` — md5 `3619b8d8022fc94d29b7b5046148592a`, 10,974,961 bytes, 172.766667 s (2:52.8), 1920×1080 H.264 30 fps, AAC 48 kHz (docs/VIDEO_RENDER.md, "FINAL take") |
+| Title (87 characters) | `Tranche: late PayPal invoices reschedule your Bryntum Gantt (AI agent + human approval)` |
+| Thumbnail | `artifacts/devpost/youtube-thumbnail-1280x720.png` (1280×720, md5 `a68cad92edcddde45c0d7da8739b5faa`) |
+| Audience | Made for kids: **No** |
+| Visibility | **Public** |
+
+Description (the first two lines carry the pitch; no `<` or `>` characters):
+
+```text
+Freelancers and small agencies paid in instalments either keep working unpaid or miss their own deadlines when a client pays late.
+Tranche turns every PayPal invoice into a milestone on a Bryntum Gantt: an AI agent proposes new dates and a PayPal reminder, and nothing changes until you approve.
+
+Recorded on the real PayPal sandbox API (PayPal's public default sandbox credentials, no real money) with a live model through the GitHub Copilot SDK. Bryntum Gantt and SchedulerPro run as the public trial (watermark visible). Waits for PayPal are fast-forwarded where the on-screen badge says so.
+
+Chapters
+00:00 Who it's for and the problem
+00:23 An overdue PayPal invoice blocks the next phase
+00:36 The owner asks the AI agent
+00:57 Dashed preview: the agent can only request changes
+01:21 Apply in the Bryntum engine, then Undo
+01:40 The client pays; the payment is recorded in the PayPal sandbox
+01:59 The agent proposes the release; the old reminder turns stale
+02:21 Audit log and what is running
+02:42 Recap
+
+Code (MIT): https://github.com/yuxinshiu63/tranche-paypal-bryntum
+Built for the PayPal AI Hackathon on Devpost.
+```
+
+Chapter times come from the final video's compose timeline (`video/out/compose-report.json` `timeline[].start`,
+rounded down): 0:00 = start (narration begins 0:05 after the 4 s intro), 0:23.67 line 3 "On the demo clock…", 0:36.47
+owner question, 0:57.24 "The dashed ghost bars…", 1:21.33 "Apply runs inside the Bryntum engine…", 1:40.05 "Now the
+client pays…", 1:59.51 "It proposes moving the plan…", 2:21.93 "Every request, approval…", 2:42.89 "Tranche: PayPal
+payments that move the plan…"; the video ends at 2:52.77, so the shortest chapter (2:42 → end) is 10.8 s. YouTube's
+rule, quoted from https://support.google.com/youtube/answer/9884579 (fetched 2026-10-26): "Make sure that the first
+timestamp you list starts with 00:00. Your video should have at least three timestamps listed in ascending order. The
+minimum length for video chapters is 10 seconds." The chapter list therefore starts at `00:00`, has 9
+entries in ascending order, and none is shorter than 10 s.
+
 ## Try it out
-- Repo: [https://github.com/yuxinshiu63/<repo>] (MIT)
-- Video: [YouTube URL]
+- Repo: https://github.com/yuxinshiu63/tranche-paypal-bryntum (MIT; branch `master`) **(public after publishing)**
+- Video: [YouTube URL, after upload] — the file is `video/out/tranche-final-sandbox.mp4` (see "YouTube upload" above)
 - Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the real-sandbox
   recorded live take; see docs/VIDEO_RENDER.md "Devpost media")
 - Run: `npm install && npm start` → http://127.0.0.1:4317/ (mock PayPal, no keys)
@@ -160,7 +204,8 @@ Tranche is a **new project** started for this hackathon. All commits are in this
 | d544b95, ef2581f | 2026-10-26 13:20–13:25 +00:00 | M4-live docs; sandbox video scene |
 | f1337ec, 9727250 | 2026-10-26 13:55 +00:00 | M4-live: sandbox video take, frames, Devpost media, cleanup |
 | 53f58be | 2026-10-26 14:36 +00:00 | Sorted invoice chips; in-app PayPal reminder on the real sandbox (204); leftovers cleanup |
-| the commit after 53f58be | 2026-10-26 | Final sandbox video re-render with sorted chips; Devpost media; docs |
+| 1130ea9 | 2026-10-26 14:39 +00:00 | Final sandbox video re-render with sorted chips; Devpost media; docs |
+| the commit after 1130ea9 | 2026-10-26 | Docs: YouTube upload fields and chapters, planned repo URL, submission video named; fresh-clone check |
 
 The official rules give the window: "Submission Period: Thursday Oct 1, 2026 (9:15 am Pacific Time) – Thursday
 Nov 12, 2026 (12:00 pm Pacific Time)" (https://paypalaihackathon.devpost.com/rules, fetched by the user

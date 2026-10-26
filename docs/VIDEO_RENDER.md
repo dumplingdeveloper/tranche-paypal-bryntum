@@ -1,5 +1,10 @@
 # Video render — FINAL take: real PayPal sandbox, live agent, sorted chips (2026-10-26 14:19Z)
 
+> **Submission video: `video/out/tranche-final-sandbox.mp4`** (md5 `3619b8d8022fc94d29b7b5046148592a`, 172.766667 s).
+> Superseded, not for submission: `video/out/tranche-draft-sandbox.mp4` (M4-live take, md5 `c17d021d…`, section
+> below) and `video/out/tranche-draft-mock.mp4` (mock PayPal drafts, further below). YouTube fields and chapters:
+> docs/DEVPOST.md "YouTube upload".
+
 This section supersedes the M4-live draft below (kept for the record). The only product changes since that take:
 invoice chips sorted INV-1 → INV-5 (`src/server/board.ts`, commit 53f58be) and the poll-note wording when polling is
 off (not visible here; this take polls every 30 s). Scene unchanged: `video/scenes/tranche-sandbox.json`.
@@ -71,7 +76,7 @@ addresses, tokens or home paths.
 
 Chips INV-1 → INV-5, REAL SANDBOX API pill, trial watermark visible, no e-mails, tokens or home paths.
 
-# Video render — real PayPal sandbox, live agent (2026-10-26, M4-live) — earlier draft, superseded above
+# SUPERSEDED: video render — real PayPal sandbox, live agent (2026-10-26, M4-live) — `tranche-draft-sandbox.mp4`
 
 Status: **draft for review**. PayPal is the **real sandbox API** (pill "PayPal: REAL SANDBOX API" in every app frame;
 the PayPal-events header says "polled every 30 s from api-m.sandbox.paypal.com · PayPal public default credentials ·
@@ -193,7 +198,7 @@ All six viewed: REAL SANDBOX API pill and trial watermark visible, no e-mails, t
 
 ---
 
-# Earlier: draft video render, polish pass (mock PayPal, live agent)
+# SUPERSEDED: draft video render, polish pass (mock PayPal, live agent) — `tranche-draft-mock.mp4`
 
 > Kept for the record. Its frames stay in `artifacts/video-frames/` (mock); its Devpost media table below is
 > superseded by the sandbox media above (same file names, regenerated).

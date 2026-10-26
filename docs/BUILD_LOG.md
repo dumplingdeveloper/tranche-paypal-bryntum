@@ -329,3 +329,18 @@ ledger** (see the mistake below).
 
   Paid invoices cannot be cancelled (`422 CANNOT_CANCEL_PAID_INVOICE`, FACTS §9). Drafts were deleted.
 - Tests: `npm test` 65/65, `npm run test:e2e` 9/9, `npm run test:sandbox-remind` 1/1 (real sandbox, once).
+
+## 2026-10-26 14:4x — submission docs, fresh-clone check (no PayPal calls, no renders, no model turns)
+- docs/DEVPOST.md "YouTube upload": title (87 characters), description with pitch lines, chapters from
+  `video/out/compose-report.json` `timeline[].start` (YouTube chapter rule quoted from
+  https://support.google.com/youtube/answer/9884579), Made for kids: No, Public, thumbnail path, upload file with md5.
+- Planned public repo `https://github.com/yuxinshiu63/tranche-paypal-bryntum` (branch `master`), marked "(public after
+  publishing)" in "Try it out". Not created or pushed by me.
+- README "Demo video" and docs/VIDEO_RENDER.md name `video/out/tranche-final-sandbox.mp4` as the submission video;
+  `tranche-draft-sandbox.mp4` and `tranche-draft-mock.mp4` are marked superseded.
+- **Fresh clone of `master` at 1130ea9** into a `mktemp -d` directory under /tmp (`git clone --branch master <this repo>`):
+  `npm ci` → "added 65 packages in 6s" (Bryntum trial packages come from the public npm registry via the lockfile);
+  `npm test` → tests 65, pass 65, fail 0; `PORT=4318 TRANCHE_AGENT=scripted npm start` → "Tranche running at
+  http://127.0.0.1:4318/", "PayPal: MOCK", `GET /` 200, `/node_modules/@bryntum/gantt/gantt.css` 200,
+  `/web/main.ts` 200, `/api/state` invoices INV-1 … INV-5 (server stopped by PID); `npm run test:e2e` → tests 9,
+  pass 9, fail 0 (real Chrome against the clone). Temp directory deleted afterwards.
