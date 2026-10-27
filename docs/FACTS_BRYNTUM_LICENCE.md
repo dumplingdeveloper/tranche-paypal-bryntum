@@ -91,5 +91,5 @@ The licence page https://bryntum.com/products/license/ embeds it (`src="/legal/B
 2. "Does the trial package stop working after a fixed time, and if so is it counted from `npm install`?"
 3. "Is there a hackathon licence key we should use instead of the trial?"
 
-No answer has been obtained yet; the user has to post these (we never use accounts other than yuxinshiu63, and
-the Discord is outside this tool's reach).
+No answer has been obtained yet; the user has to post these from her own Discord account (the Discord is outside
+this tool's reach).
