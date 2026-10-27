@@ -171,7 +171,7 @@ minimum length for video chapters is 10 seconds." The chapter list therefore sta
 entries in ascending order, and none is shorter than 10 s.
 
 ## Try it out
-- Repo: https://github.com/dumplingdeveloper/tranche-paypal-bryntum (MIT; branch `master`) **(public after publishing)**
+- Repo: https://github.com/dumplingdeveloper/tranche-paypal-bryntum (MIT; branch `master`; public since 2026-10-27)
 - Video: [YouTube URL, after upload] — the file is `video/out/tranche-final-sandbox.mp4` (see "YouTube upload" above)
 - Gallery (3:2, 1920×1280) and YouTube thumbnail (1280×720): `artifacts/devpost/` (real UI stills from the real-sandbox
   recorded live take; see docs/VIDEO_RENDER.md "Devpost media")

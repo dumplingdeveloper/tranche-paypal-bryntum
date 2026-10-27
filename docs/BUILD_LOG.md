@@ -358,3 +358,14 @@ Not used: figures that I only saw in search summaries or secondary articles (e.g
 the gov.uk page does contain "costing the UK economy £11 billion every year", but two sources were enough.
 The EC figures describe EU commercial transactions in general (SMEs), not freelancers specifically; the UK sentence
 names freelancers explicitly.
+
+## 2026-10-27 21:0x — repo published (no code changes, no PayPal calls, no model turns)
+- Published with `node ../hackathon_paypal/submission/publish-github.mjs --token-from-gh --preset tranche`, using the
+  GitHub account logged in with `gh` on the build machine (`dumplingdeveloper`, OAuth token with the `repo` scope).
+  The first push failed with `RPC failed; HTTP 400` (git 2.21.1, about 47 MB of PNG frames); the script now pushes with
+  `-c http.postBuffer=524288000 -c http.version=HTTP/1.1`, and the retry succeeded.
+- Checked without authentication: https://github.com/dumplingdeveloper/tranche-paypal-bryntum returns HTTP 200; the
+  API reports `visibility: public`, default branch `master`, license `MIT`; `git ls-remote` HEAD = local `master`.
+- Before pushing, every blob reachable from `master` was scanned for the PayPal sandbox client id/secret (and their
+  Basic-auth base64), the gh token, and common token/key patterns: no real credential; the only pattern hits are the
+  fake values in `test/unit/sandboxClient.test.ts`. All e-mail addresses are on `.example` domains.
