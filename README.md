@@ -129,10 +129,12 @@ quotes: [docs/FACTS_BRYNTUM_LICENCE.md](docs/FACTS_BRYNTUM_LICENCE.md).
    plan to the real payment date.
 
 ### Demo video
+**Watch on YouTube:** https://youtu.be/uTw7a5ZB9_M (public, 2:53)
+
 **Submission video:** `video/out/tranche-final-sandbox.mp4` (2:52.8, 1920×1080, md5
 `3619b8d8022fc94d29b7b5046148592a`; real PayPal sandbox with PayPal's public default credentials, live model through
 the GitHub Copilot SDK). It is rendered locally by the pipeline in `video/` and not committed (`video/out/` is
-gitignored); the YouTube link will be added after upload. Earlier renders are **superseded** and not for submission:
+gitignored); the same file (SHA-256 checked in the browser before upload) is the YouTube video above. Earlier renders are **superseded** and not for submission:
 `tranche-draft-mock.mp4` (mock PayPal) and `tranche-draft-sandbox.mp4` (first sandbox take, unsorted invoice chips).
 Details, frames and checks: [docs/VIDEO_RENDER.md](docs/VIDEO_RENDER.md).
 

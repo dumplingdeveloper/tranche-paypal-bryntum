@@ -369,3 +369,16 @@ names freelancers explicitly.
 - Before pushing, every blob reachable from `master` was scanned for the PayPal sandbox client id/secret (and their
   Basic-auth base64), the gh token, and common token/key patterns: no real credential; the only pattern hits are the
   fake values in `test/unit/sandboxClient.test.ts`. All e-mail addresses are on `.example` domains.
+
+## 2026-10-27 21:2x — YouTube upload (no code changes, no PayPal calls, no model turns)
+- Uploaded `video/out/tranche-final-sandbox.mp4` from the user's Chrome (YouTube channel "Dumpling",
+  `UCcbXF1fvPwJNOOFGlb5cu5A`, no other videos) with the title, description, "No, it's not made for kids" and
+  **Public** from docs/DEVPOST.md "YouTube upload". Before selecting the file, its SHA-256 inside the page equalled the
+  local file's (`af42b4f0…065ad9`). YouTube Studio: "Copyright check complete — No issues found".
+- Checked without signing in: https://youtu.be/uTw7a5ZB9_M — oEmbed title = our title, author "Dumpling";
+  watch page `playabilityStatus` OK, `isPrivate: false`, `isUnlisted: false`, `lengthSeconds: 173`, and the
+  description is byte-identical to the one in docs/DEVPOST.md (1,132 characters, so the chapters are present).
+- Not done: the custom thumbnail. Setting it from a script did not register in Studio, so the video shows YouTube's
+  automatic frame (the full board). AI-use disclosure was left at "No": YouTube asks for it only for realistic content
+  such as making "a real person appear to say or do something they didn't do"
+  (https://support.google.com/youtube/answer/14328491); this is a screen recording with a synthetic narrator.
